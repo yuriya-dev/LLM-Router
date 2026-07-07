@@ -11,28 +11,28 @@ from supabase import Client
 _STATIC_ROUTING: Dict[str, List[Tuple[str, str]]] = {
     # Virtual Models
     "combo-smart": [
-        ("openrouter", "anthropic/claude-3.5-sonnet"),
-        ("gemini", "gemini-1.5-pro"),
+        ("openrouter", "anthropic/claude-sonnet-4"),
+        ("gemini", "gemini-2.5-pro"),
     ],
     "combo-fast": [
-        ("groq", "llama3-8b-8192"),
-        ("gemini", "gemini-1.5-flash"),
+        ("groq", "llama-3.3-70b-versatile"),
+        ("gemini", "gemini-2.0-flash"),
     ],
     # Direct mappings with fallback alternatives
     "gemini-1.5-pro": [
-        ("gemini", "gemini-1.5-pro"),
-        ("openrouter", "google/gemini-pro"),
+        ("gemini", "gemini-2.5-pro"),
+        ("openrouter", "google/gemini-2.5-pro"),
     ],
     "gemini-1.5-flash": [
-        ("gemini", "gemini-1.5-flash"),
-        ("openrouter", "google/gemini-flash"),
+        ("gemini", "gemini-2.0-flash"),
+        ("openrouter", "google/gemini-2.5-flash"),
     ],
     "claude-3-5-sonnet": [
-        ("openrouter", "anthropic/claude-3.5-sonnet"),
-        ("gemini", "gemini-1.5-pro"),
+        ("openrouter", "anthropic/claude-sonnet-4"),
+        ("gemini", "gemini-2.5-pro"),
     ],
     "llama3-8b": [
-        ("groq", "llama3-8b-8192"),
+        ("groq", "llama-3.1-8b-instant"),
         ("openrouter", "meta-llama/llama-3-8b-instruct"),
     ],
 }
