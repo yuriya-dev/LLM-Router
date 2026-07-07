@@ -69,7 +69,14 @@ def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(security)
             )
     return True
 
-@app.get("/health")
+@app.api_route("/", methods=["GET", "HEAD"])
+async def root():
+    """
+    Root endpoint returning basic status. Supported for uptime checks on the root URL.
+    """
+    return {"message": "LLM Router is running. Access /health for pool status."}
+
+@app.api_route("/health", methods=["GET", "HEAD"])
 async def health_check():
     """
     Returns router status and a real-time snapshot of the key pool health.
