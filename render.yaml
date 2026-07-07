@@ -5,9 +5,24 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn src.main:app --host 0.0.0.0 --port $PORT
     envVars:
+      # ── Supabase ───────────────────────────────────────────────────────────
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_KEY
         sync: false
+
+      # ── Router Auth ────────────────────────────────────────────────────────
       - key: ROUTER_API_KEY
         sync: false
+
+      # ── Rate Limiting (per API key / IP) ───────────────────────────────────
+      - key: RATE_LIMIT_RPM
+        value: "60"
+      - key: RATE_LIMIT_BURST
+        value: "10"
+
+      # ── Key Cooldown Durations (seconds) ───────────────────────────────────
+      - key: COOLDOWN_RATE_LIMIT_SECS
+        value: "60"
+      - key: COOLDOWN_NETWORK_ERROR_SECS
+        value: "15"

@@ -1,23 +1,59 @@
-# src/main.py
+import asyncio
 import time
-import json
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from typing import Dict, Any
 
 from src.config import settings
+from src.schemas import ChatCompletionRequest
 from src.core.router import resolve_fallback_chain
 from src.core.pool_manager import (
+    supabase,
     get_healthy_keys,
     mark_key_cooldown,
     mark_key_dead,
     update_key_last_used,
-    log_request
+    log_request,
+    restore_all_expired_cooldowns
 )
-from src.providers.client import execute_request, execute_stream_request, ProviderError
+from src.providers.client import (
+    execute_request,
+    execute_stream_request,
+    init_http_client,
+    close_http_client,
+    ProviderError
+)
+from src.routers import admin as admin_router
 
-app = FastAPI(title="Custom LLM Router", version="1.0.0")
+def _get_rate_limit_key(request: Request) -> str:
+    """
+    Identify the caller by their Bearer token (so each API key has its own quota).
+    Falls back to IP address if no token is present.
+    """
+    auth = request.headers.get("Authorization", "")
+    if auth.startswith("Bearer "):
+        return auth[7:]  # Use the token itself as the identity
+    return get_remote_address(request)
+
+# Limiter uses the token/IP as the identity key
+limiter = Limiter(key_func=_get_rate_limit_key)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Initialize shared resources on startup and clean up on shutdown."""
+    init_http_client()
+    yield
+    await close_http_client()
+
+app = FastAPI(title="Custom LLM Router", version="1.0.0", lifespan=lifespan)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.include_router(admin_router.router)
 security = HTTPBearer(auto_error=False)
 
 def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(security)):
@@ -34,50 +70,101 @@ def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(security)
     return True
 
 @app.get("/health")
-def health_check():
-    return {"status": "healthy", "timestamp": time.time()}
+async def health_check():
+    """
+    Returns router status and a real-time snapshot of the key pool health.
+    Does NOT require authentication — safe to expose for uptime monitors.
+    """
+    def _query():
+        return supabase.table("provider_keys").select("provider, status").execute()
 
-@app.get("/v1/models", dependencies=[Depends(verify_api_key)])
-def list_models():
-    """
-    Return the list of models supported by this router.
-    """
+    pool: dict = {}
+    db_ok = True
+    try:
+        # Automatically restore any keys whose cooldown has expired before checking health
+        await restore_all_expired_cooldowns()
+        response = await asyncio.to_thread(_query)
+        for row in (response.data or []):
+            p, s = row["provider"], row["status"]
+            pool.setdefault(p, {"healthy": 0, "cooldown": 0, "dead": 0})
+            pool[p][s] = pool[p].get(s, 0) + 1
+    except Exception as e:
+        db_ok = False
+        pool = {"error": str(e)}
+
+    total_healthy = sum(v.get("healthy", 0) for v in pool.values() if isinstance(v, dict))
+    overall = "healthy" if db_ok and total_healthy > 0 else ("degraded" if db_ok else "unhealthy")
+
     return {
-        "object": "list",
-        "data": [
-            {"id": "combo-smart", "object": "model", "owned_by": "custom-router"},
-            {"id": "combo-fast", "object": "model", "owned_by": "custom-router"},
-            {"id": "gemini-1.5-pro", "object": "model", "owned_by": "google"},
-            {"id": "gemini-1.5-flash", "object": "model", "owned_by": "google"},
-            {"id": "claude-3-5-sonnet", "object": "model", "owned_by": "anthropic"},
-            {"id": "llama3-8b", "object": "model", "owned_by": "meta"},
-        ]
+        "status": overall,
+        "timestamp": time.time(),
+        "db_connected": db_ok,
+        "key_pool": pool,
     }
 
+@app.get("/v1/models", dependencies=[Depends(verify_api_key)])
+async def list_models():
+    """
+    Return the list of models supported by this router.
+    Dynamically loads all virtual models configured in database and static defaults.
+    """
+    from src.core.router import get_route_cache
+    
+    try:
+        routes = await get_route_cache(supabase)
+        model_list = []
+        for model_id in routes.keys():
+            # Determine owned_by label based on name heuristic
+            owned_by = "custom-router"
+            lower_id = model_id.lower()
+            if "gemini" in lower_id:
+                owned_by = "google"
+            elif "claude" in lower_id or "sonnet" in lower_id or "opus" in lower_id:
+                owned_by = "anthropic"
+            elif "llama" in lower_id:
+                owned_by = "meta"
+            elif "gpt" in lower_id:
+                owned_by = "openai"
+            elif "deepseek" in lower_id:
+                owned_by = "deepseek"
+            elif "mistral" in lower_id:
+                owned_by = "mistral"
+                
+            model_list.append({"id": model_id, "object": "model", "owned_by": owned_by})
+        return {"object": "list", "data": model_list}
+    except Exception as e:
+        # Fallback to a static list if something goes wrong
+        return {
+            "object": "list",
+            "data": [
+                {"id": "combo-smart", "object": "model", "owned_by": "custom-router"},
+                {"id": "combo-fast", "object": "model", "owned_by": "custom-router"},
+                {"id": "gemini-1.5-pro", "object": "model", "owned_by": "google"},
+                {"id": "gemini-1.5-flash", "object": "model", "owned_by": "google"},
+                {"id": "claude-3-5-sonnet", "object": "model", "owned_by": "anthropic"},
+                {"id": "llama3-8b", "object": "model", "owned_by": "meta"},
+            ]
+        }
+
 @app.post("/v1/chat/completions", dependencies=[Depends(verify_api_key)])
-async def chat_completions(request: Request):
+@limiter.limit(lambda: f"{settings.RATE_LIMIT_RPM}/minute;{settings.RATE_LIMIT_BURST}/second")
+async def chat_completions(request: Request, body: ChatCompletionRequest):
     """
     Unified OpenAI-compatible chat completions endpoint with automatic fallback and key rotation.
     """
-    try:
-        body = await request.json()
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=400, detail="Invalid JSON body")
-
-    requested_model = body.get("model")
-    if not requested_model:
-        raise HTTPException(status_code=400, detail="Missing 'model' field")
-
-    is_stream = body.get("stream", False)
+    requested_model = body.model
+    is_stream = body.stream
+    # Convert to plain dict for passing to provider HTTP clients
+    body_dict = body.model_dump(exclude_none=True)
 
     # 1. Resolve fallback chain: list of (provider, target_model)
-    fallback_chain = resolve_fallback_chain(requested_model)
+    fallback_chain = await resolve_fallback_chain(requested_model, supabase)
     errors_log = []
 
     # 2. Iterate through the fallback chain
     for provider, target_model in fallback_chain:
         # Fetch healthy keys for this provider
-        keys = get_healthy_keys(provider)
+        keys = await get_healthy_keys(provider)
         if not keys:
             errors_log.append(f"No healthy keys available for provider: {provider}")
             continue
@@ -91,28 +178,34 @@ async def chat_completions(request: Request):
             
             try:
                 if is_stream:
-                    # Execute streaming request
+                    # Capture variables for the callback closure
+                    _key_id = key_id
+                    _provider = provider
+                    _target_model = target_model
+                    _start_time = start_time
+
+                    async def on_stream_complete(prompt_tokens: int, completion_tokens: int):
+                        """Called by the generator after stream ends with accurate token counts."""
+                        asyncio.create_task(update_key_last_used(_key_id))
+                        asyncio.create_task(log_request(
+                            provider=_provider,
+                            model=_target_model,
+                            key_id=_key_id,
+                            prompt_tokens=prompt_tokens,
+                            completion_tokens=completion_tokens,
+                            latency_ms=int((time.time() - _start_time) * 1000),
+                            status_code=200
+                        ))
+
+                    # Execute streaming request with on_complete callback for accurate token logging
                     stream_generator = await execute_stream_request(
                         provider=provider,
                         target_model=target_model,
                         api_key=api_key,
-                        request_body=body
+                        request_body=body_dict,
+                        on_complete=on_stream_complete
                     )
-                    
-                    # Update key last used immediately to maintain LRU/Round-robin
-                    update_key_last_used(key_id)
-                    
-                    # Log successful request trigger in background (0 tokens initially for stream)
-                    log_request(
-                        provider=provider,
-                        model=target_model,
-                        key_id=key_id,
-                        prompt_tokens=0,
-                        completion_tokens=0,
-                        latency_ms=int((time.time() - start_time) * 1000),
-                        status_code=200
-                    )
-                    
+
                     return StreamingResponse(
                         stream_generator,
                         media_type="text/event-stream"
@@ -123,7 +216,7 @@ async def chat_completions(request: Request):
                         provider=provider,
                         target_model=target_model,
                         api_key=api_key,
-                        request_body=body
+                        request_body=body_dict
                     )
                     
                     response_json = response.json()
@@ -134,9 +227,9 @@ async def chat_completions(request: Request):
                     completion_tokens = usage.get("completion_tokens", 0)
                     latency_ms = int((time.time() - start_time) * 1000)
 
-                    # Update database metrics
-                    update_key_last_used(key_id)
-                    log_request(
+                    # Fire-and-forget: update DB & log in background so client gets response immediately
+                    asyncio.create_task(update_key_last_used(key_id))
+                    asyncio.create_task(log_request(
                         provider=provider,
                         model=target_model,
                         key_id=key_id,
@@ -144,7 +237,7 @@ async def chat_completions(request: Request):
                         completion_tokens=completion_tokens,
                         latency_ms=latency_ms,
                         status_code=200
-                    )
+                    ))
                     
                     return JSONResponse(content=response_json)
 
@@ -154,7 +247,7 @@ async def chat_completions(request: Request):
                 errors_log.append(f"Provider {provider} (Key ID: {key_id}) failed: {error_msg}")
                 
                 # Log error in database
-                log_request(
+                await log_request(
                     provider=provider,
                     model=target_model,
                     key_id=key_id,
@@ -167,12 +260,12 @@ async def chat_completions(request: Request):
                 
                 # Update key status based on failure type
                 if pe.is_rate_limit:
-                    mark_key_cooldown(key_id, duration_seconds=60)
+                    await mark_key_cooldown(key_id, duration_seconds=settings.COOLDOWN_RATE_LIMIT_SECS)
                 elif pe.is_auth_error:
-                    mark_key_dead(key_id, error_msg)
+                    await mark_key_dead(key_id, error_msg)
                 else:
                     # Short cooldown for other failures (network, server errors)
-                    mark_key_cooldown(key_id, duration_seconds=15)
+                    await mark_key_cooldown(key_id, duration_seconds=settings.COOLDOWN_NETWORK_ERROR_SECS)
                 
                 # Continue loop to try next key
                 continue
@@ -182,7 +275,7 @@ async def chat_completions(request: Request):
                 error_msg = f"Unexpected error: {str(e)}"
                 errors_log.append(error_msg)
                 
-                log_request(
+                await log_request(
                     provider=provider,
                     model=target_model,
                     key_id=key_id,
@@ -194,7 +287,7 @@ async def chat_completions(request: Request):
                 )
                 
                 # Put in short cooldown on unexpected exception
-                mark_key_cooldown(key_id, duration_seconds=15)
+                await mark_key_cooldown(key_id, duration_seconds=settings.COOLDOWN_NETWORK_ERROR_SECS)
                 continue
 
     # If we exited the loops without returning a response, it means all attempts failed
