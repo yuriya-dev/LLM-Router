@@ -73,6 +73,26 @@ class TestHandleErrorResponse:
             _handle_error_response(response, "openrouter")
         assert exc_info.value.is_auth_error is True
 
+    def test_402_raises_auth_error(self):
+        response = make_mock_response(402, {"error": {"message": "Insufficient credits"}})
+        with pytest.raises(ProviderError) as exc_info:
+            _handle_error_response(response, "openrouter")
+        assert exc_info.value.is_auth_error is True
+        assert exc_info.value.is_request_error is False
+
+    def test_400_raises_request_error(self):
+        response = make_mock_response(400, {"error": {"message": "Invalid parameters"}})
+        with pytest.raises(ProviderError) as exc_info:
+            _handle_error_response(response, "groq")
+        assert exc_info.value.is_request_error is True
+        assert exc_info.value.is_auth_error is False
+
+    def test_413_raises_request_error(self):
+        response = make_mock_response(413, {"error": {"message": "Request too large"}})
+        with pytest.raises(ProviderError) as exc_info:
+            _handle_error_response(response, "groq")
+        assert exc_info.value.is_request_error is True
+
     def test_500_is_generic_error(self):
         response = make_mock_response(500, text="internal server error")
         with pytest.raises(ProviderError) as exc_info:
@@ -80,6 +100,7 @@ class TestHandleErrorResponse:
         err = exc_info.value
         assert err.is_rate_limit is False
         assert err.is_auth_error is False
+        assert err.is_request_error is False
         assert err.status_code == 500
 
     def test_extracts_json_error_message(self):

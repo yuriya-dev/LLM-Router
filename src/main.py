@@ -332,10 +332,16 @@ async def chat_completions(request: Request, body: ChatCompletionRequest):
                     await mark_key_cooldown(key_id, duration_seconds=settings.COOLDOWN_RATE_LIMIT_SECS)
                 elif pe.is_auth_error:
                     await mark_key_dead(key_id, error_msg)
+                elif pe.is_request_error:
+                    # Request-level error (e.g., 400, 404, 413). Do NOT cooldown or mark key dead.
+                    # Immediately break the key loop to fallback to next provider.
+                    break
                 else:
                     # Short cooldown for other failures (network, server errors)
                     await mark_key_cooldown(key_id, duration_seconds=settings.COOLDOWN_NETWORK_ERROR_SECS)
                 
+                if pe.is_request_error:
+                    break
                 # Continue loop to try next key
                 continue
 

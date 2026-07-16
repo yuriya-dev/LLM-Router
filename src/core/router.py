@@ -25,7 +25,7 @@ _STATIC_ROUTING: Dict[str, List[Tuple[str, str]]] = {
     ],
     "gemini-1.5-flash": [
         ("gemini", "gemini-2.0-flash"),
-        ("openrouter", "google/gemini-2.5-flash"),
+        ("openrouter", "google/gemini-3.5-flash"),
     ],
     "claude-3-5-sonnet": [
         ("openrouter", "anthropic/claude-sonnet-4"),
@@ -101,8 +101,22 @@ def _heuristic_fallback(requested_model: str) -> List[Tuple[str, str]]:
     Determine a fallback chain from the model name prefix when no explicit
     route exists in either the DB or the static config.
     """
+    model_lower = requested_model.lower()
+
+    # Clean up common naming variations for Claude 3.5 Sonnet
+    if "claude-3-5-sonnet" in model_lower:
+        return [("openrouter", "anthropic/claude-3.5-sonnet")]
+
+    # Clean up common naming variations for Mistral Large
+    if "mistral-large" in model_lower:
+        return [("mistral", "mistral-large-latest"), ("openrouter", "mistralai/mistral-large")]
+
     if requested_model.startswith("gemini-"):
-        return [("gemini", requested_model), ("openrouter", f"google/{requested_model}")]
+        # Map deprecated/invalid gemini-2.5-flash and gemini-1.5-flash to 3.5-flash
+        target = requested_model
+        if "2.5-flash" in requested_model or "1.5-flash" in requested_model:
+            target = "gemini-3.5-flash"
+        return [("gemini", target), ("openrouter", f"google/{target}")]
     elif requested_model.startswith("claude-"):
         return [("openrouter", f"anthropic/{requested_model}")]
     elif "llama" in requested_model.lower():

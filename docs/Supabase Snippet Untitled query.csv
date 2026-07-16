@@ -1,0 +1,533 @@
+created_at,provider,model,status_code,error_message
+2026-07-16 19:51:06.853703+00,gemini,gemini-2.5-flash,404,"gemini returned error 404: [{
+  ""error"": {
+    ""code"": 404,
+    ""message"": ""This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use a newer model for the latest features and improvements."",
+    ""status"": ""NOT_FOUND""
+  }
+}
+]"
+2026-07-16 19:51:06.077268+00,gemini,gemini-2.5-flash,404,"gemini returned error 404: [{
+  ""error"": {
+    ""code"": 404,
+    ""message"": ""This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use a newer model for the latest features and improvements."",
+    ""status"": ""NOT_FOUND""
+  }
+}
+]"
+2026-07-16 19:50:49.372007+00,openrouter,anthropic/claude-3-5-sonnet-latest,400,openrouter returned error 400: anthropic/claude-3-5-sonnet-latest is not a valid model ID
+2026-07-16 19:50:39.568146+00,openrouter,anthropic/claude-3-5-sonnet-latest,400,openrouter returned error 400: anthropic/claude-3-5-sonnet-latest is not a valid model ID
+2026-07-16 19:50:38.569354+00,openrouter,anthropic/claude-3-5-sonnet-latest,400,openrouter returned error 400: anthropic/claude-3-5-sonnet-latest is not a valid model ID
+2026-07-16 19:50:37.625006+00,openrouter,anthropic/claude-3-5-sonnet-latest,400,openrouter returned error 400: anthropic/claude-3-5-sonnet-latest is not a valid model ID
+2026-07-16 19:50:21.452146+00,openrouter,anthropic/claude-3-5-sonnet-latest,400,openrouter returned error 400: anthropic/claude-3-5-sonnet-latest is not a valid model ID
+2026-07-16 19:50:20.432603+00,openrouter,anthropic/claude-3-5-sonnet-latest,400,openrouter returned error 400: anthropic/claude-3-5-sonnet-latest is not a valid model ID
+2026-07-16 19:50:19.075557+00,openrouter,anthropic/claude-3-5-sonnet-latest,400,openrouter returned error 400: anthropic/claude-3-5-sonnet-latest is not a valid model ID
+2026-07-16 19:50:18.045388+00,openrouter,anthropic/claude-3-5-sonnet-latest,400,openrouter returned error 400: anthropic/claude-3-5-sonnet-latest is not a valid model ID
+2026-07-16 19:48:05.423269+00,openrouter,mistral-large-latest,400,openrouter returned error 400: mistral-large-latest is not a valid model ID
+2026-07-16 19:48:04.775963+00,openrouter,mistral-large-latest,400,openrouter returned error 400: mistral-large-latest is not a valid model ID
+2026-07-16 19:48:03.80266+00,openrouter,mistral-large-latest,400,openrouter returned error 400: mistral-large-latest is not a valid model ID
+2026-07-16 19:48:02.841528+00,openrouter,mistral-large-latest,400,openrouter returned error 400: mistral-large-latest is not a valid model ID
+2026-07-16 19:47:45.228145+00,openrouter,mistral-large-latest,400,openrouter returned error 400: mistral-large-latest is not a valid model ID
+2026-07-16 19:47:44.504795+00,openrouter,mistral-large-latest,400,openrouter returned error 400: mistral-large-latest is not a valid model ID
+2026-07-16 19:47:43.399497+00,openrouter,mistral-large-latest,400,openrouter returned error 400: mistral-large-latest is not a valid model ID
+2026-07-16 19:47:42.712733+00,openrouter,mistral-large-latest,400,openrouter returned error 400: mistral-large-latest is not a valid model ID
+2026-07-16 19:45:51.368417+00,gemini,gemini-2.5-flash,404,"gemini returned error 404: [{
+  ""error"": {
+    ""code"": 404,
+    ""message"": ""This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use a newer model for the latest features and improvements."",
+    ""status"": ""NOT_FOUND""
+  }
+}
+]"
+2026-07-16 19:45:49.881736+00,gemini,gemini-2.5-flash,404,"gemini returned error 404: [{
+  ""error"": {
+    ""code"": 404,
+    ""message"": ""This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use a newer model for the latest features and improvements."",
+    ""status"": ""NOT_FOUND""
+  }
+}
+]"
+2026-07-16 19:43:16.327176+00,openrouter,anthropic/claude-sonnet-4,402,"openrouter returned error 402: This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 2407. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account"
+2026-07-16 19:43:06.082845+00,openrouter,anthropic/claude-sonnet-4,402,"openrouter returned error 402: This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 2588. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account"
+2026-07-16 19:43:05.470648+00,openrouter,anthropic/claude-sonnet-4,402,"openrouter returned error 402: Insufficient credits. This account never purchased credits. Make sure your key is on the correct account or org, and if so, purchase more at https://openrouter.ai/settings/credits"
+2026-07-16 19:43:04.877492+00,openrouter,anthropic/claude-sonnet-4,402,"openrouter returned error 402: This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 2407. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account"
+2026-07-16 19:42:56.721415+00,openrouter,anthropic/claude-sonnet-4,402,"openrouter returned error 402: This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 2407. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account"
+2026-07-16 19:42:46.793095+00,gemini,gemini-2.5-pro,429,"gemini returned error 429: [{
+  ""error"": {
+    ""code"": 429,
+    ""message"": ""You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.5-pro\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.5-pro\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.5-pro\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.5-pro\nPlease retry in 13.303463773s."",
+    ""status"": ""RESOURCE_EXHAUSTED"",
+    ""details"": [
+      {
+        ""@type"": ""type.googleapis.com/google.rpc.Help"",
+        ""links"": [
+          {
+            ""description"": ""Learn more about Gemini API quotas"",
+            ""url"": ""https://ai.google.dev/gemini-api/docs/rate-limits""
+          }
+        ]
+      },
+      {
+        ""@type"": ""type.googleapis.com/google.rpc.QuotaFailure"",
+        ""violations"": [
+          {
+            ""quotaMetric"": ""generativelanguage.googleapis.com/generate_content_free_tier_input_token_count"",
+            ""quotaId"": ""GenerateContentInputTokensPerModelPerMinute-FreeTier"",
+            ""quotaDimensions"": {
+              ""location"": ""global"",
+              ""model"": ""gemini-2.5-pro""
+            }
+          },
+          {
+            ""quotaMetric"": ""generativelanguage.googleapis.com/generate_content_free_tier_requests"",
+            ""quotaId"": ""GenerateRequestsPerMinutePerProjectPerModel-FreeTier"",
+            ""quotaDimensions"": {
+              ""location"": ""global"",
+              ""model"": ""gemini-2.5-pro""
+            }
+          },
+          {
+            ""quotaMetric"": ""generativelanguage.googleapis.com/generate_content_free_tier_requests"",
+            ""quotaId"": ""GenerateRequestsPerDayPerProjectPerModel-FreeTier"",
+            ""quotaDimensions"": {
+              ""location"": ""global"",
+              ""model"": ""gemini-2.5-pro""
+            }
+          },
+          {
+            ""quotaMetric"": ""generativelanguage.googleapis.com/generate_content_free_tier_input_token_count"",
+            ""quotaId"": ""GenerateContentInputTokensPerModelPerDay-FreeTier"",
+            ""quotaDimensions"": {
+              ""location"": ""global"",
+              ""model"": ""gemini-2.5-pro""
+            }
+          }
+        ]
+      },
+      {
+        ""@type"": ""type.googleapis.com/google.rpc.RetryInfo"",
+        ""retryDelay"": ""13s""
+      }
+    ]
+  }
+}
+]"
+2026-07-16 19:42:45.722092+00,gemini,gemini-2.5-pro,429,"gemini returned error 429: [{
+  ""error"": {
+    ""code"": 429,
+    ""message"": ""You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.5-pro\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.5-pro\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.5-pro\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.5-pro\nPlease retry in 14.713868311s."",
+    ""status"": ""RESOURCE_EXHAUSTED"",
+    ""details"": [
+      {
+        ""@type"": ""type.googleapis.com/google.rpc.Help"",
+        ""links"": [
+          {
+            ""description"": ""Learn more about Gemini API quotas"",
+            ""url"": ""https://ai.google.dev/gemini-api/docs/rate-limits""
+          }
+        ]
+      },
+      {
+        ""@type"": ""type.googleapis.com/google.rpc.QuotaFailure"",
+        ""violations"": [
+          {
+            ""quotaMetric"": ""generativelanguage.googleapis.com/generate_content_free_tier_requests"",
+            ""quotaId"": ""GenerateRequestsPerDayPerProjectPerModel-FreeTier"",
+            ""quotaDimensions"": {
+              ""model"": ""gemini-2.5-pro"",
+              ""location"": ""global""
+            }
+          },
+          {
+            ""quotaMetric"": ""generativelanguage.googleapis.com/generate_content_free_tier_requests"",
+            ""quotaId"": ""GenerateRequestsPerMinutePerProjectPerModel-FreeTier"",
+            ""quotaDimensions"": {
+              ""location"": ""global"",
+              ""model"": ""gemini-2.5-pro""
+            }
+          },
+          {
+            ""quotaMetric"": ""generativelanguage.googleapis.com/generate_content_free_tier_input_token_count"",
+            ""quotaId"": ""GenerateContentInputTokensPerModelPerMinute-FreeTier"",
+            ""quotaDimensions"": {
+              ""location"": ""global"",
+              ""model"": ""gemini-2.5-pro""
+            }
+          },
+          {
+            ""quotaMetric"": ""generativelanguage.googleapis.com/generate_content_free_tier_input_token_count"",
+            ""quotaId"": ""GenerateContentInputTokensPerModelPerDay-FreeTier"",
+            ""quotaDimensions"": {
+              ""model"": ""gemini-2.5-pro"",
+              ""location"": ""global""
+            }
+          }
+        ]
+      },
+      {
+        ""@type"": ""type.googleapis.com/google.rpc.RetryInfo"",
+        ""retryDelay"": ""14s""
+      }
+    ]
+  }
+}
+]"
+2026-07-16 19:42:44.226361+00,openrouter,anthropic/claude-sonnet-4,402,"openrouter returned error 402: This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 2588. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account"
+2026-07-16 19:42:42.49414+00,openrouter,anthropic/claude-sonnet-4,402,"openrouter returned error 402: Insufficient credits. This account never purchased credits. Make sure your key is on the correct account or org, and if so, purchase more at https://openrouter.ai/settings/credits"
+2026-07-16 19:42:41.121113+00,openrouter,anthropic/claude-sonnet-4,402,"openrouter returned error 402: This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 2407. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account"
+2026-07-16 19:42:39.736283+00,openrouter,anthropic/claude-sonnet-4,402,"openrouter returned error 402: This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 2407. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account"
+2026-07-16 19:39:22.318156+00,openrouter,openai/gpt-4o,402,"openrouter returned error 402: Insufficient credits. This account never purchased credits. Make sure your key is on the correct account or org, and if so, purchase more at https://openrouter.ai/settings/credits"
+2026-07-16 19:39:20.644383+00,openrouter,openai/gpt-4o,402,"openrouter returned error 402: This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3611. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account"
+2026-07-16 19:39:18.881508+00,openrouter,openai/gpt-4o,402,"openrouter returned error 402: This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3611. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account"
+2026-07-16 10:37:48.912202+00,gemini,gemini-2.5-flash,404,"gemini returned error 404: [{
+  ""error"": {
+    ""code"": 404,
+    ""message"": ""This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use a newer model for the latest features and improvements."",
+    ""status"": ""NOT_FOUND""
+  }
+}
+]"
+2026-07-16 10:37:47.495952+00,gemini,gemini-2.5-flash,404,"gemini returned error 404: [{
+  ""error"": {
+    ""code"": 404,
+    ""message"": ""This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use a newer model for the latest features and improvements."",
+    ""status"": ""NOT_FOUND""
+  }
+}
+]"
+2026-07-16 10:25:46.278515+00,openrouter,anthropic/claude-sonnet-4,402,"openrouter returned error 402: Insufficient credits. This account never purchased credits. Make sure your key is on the correct account or org, and if so, purchase more at https://openrouter.ai/settings/credits"
+2026-07-16 10:25:45.320386+00,openrouter,anthropic/claude-sonnet-4,402,"openrouter returned error 402: This request requires more credits, or fewer max_tokens. You requested up to 6000 tokens, but can only afford 2408. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account"
+2026-07-16 10:25:43.091523+00,openrouter,anthropic/claude-sonnet-4,402,"openrouter returned error 402: This request requires more credits, or fewer max_tokens. You requested up to 6000 tokens, but can only afford 2408. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account"
+2026-07-16 10:25:25.098567+00,gemini,gemini-2.5-pro,429,"gemini returned error 429: [{
+  ""error"": {
+    ""code"": 429,
+    ""message"": ""You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.5-pro\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.5-pro\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.5-pro\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.5-pro\nPlease retry in 34.990743664s."",
+    ""status"": ""RESOURCE_EXHAUSTED"",
+    ""details"": [
+      {
+        ""@type"": ""type.googleapis.com/google.rpc.Help"",
+        ""links"": [
+          {
+            ""description"": ""Learn more about Gemini API quotas"",
+            ""url"": ""https://ai.google.dev/gemini-api/docs/rate-limits""
+          }
+        ]
+      },
+      {
+        ""@type"": ""type.googleapis.com/google.rpc.QuotaFailure"",
+        ""violations"": [
+          {
+            ""quotaMetric"": ""generativelanguage.googleapis.com/generate_content_free_tier_input_token_count"",
+            ""quotaId"": ""GenerateContentInputTokensPerModelPerDay-FreeTier"",
+            ""quotaDimensions"": {
+              ""location"": ""global"",
+              ""model"": ""gemini-2.5-pro""
+            }
+          },
+          {
+            ""quotaMetric"": ""generativelanguage.googleapis.com/generate_content_free_tier_requests"",
+            ""quotaId"": ""GenerateRequestsPerDayPerProjectPerModel-FreeTier"",
+            ""quotaDimensions"": {
+              ""location"": ""global"",
+              ""model"": ""gemini-2.5-pro""
+            }
+          },
+          {
+            ""quotaMetric"": ""generativelanguage.googleapis.com/generate_content_free_tier_requests"",
+            ""quotaId"": ""GenerateRequestsPerMinutePerProjectPerModel-FreeTier"",
+            ""quotaDimensions"": {
+              ""location"": ""global"",
+              ""model"": ""gemini-2.5-pro""
+            }
+          },
+          {
+            ""quotaMetric"": ""generativelanguage.googleapis.com/generate_content_free_tier_input_token_count"",
+            ""quotaId"": ""GenerateContentInputTokensPerModelPerMinute-FreeTier"",
+            ""quotaDimensions"": {
+              ""location"": ""global"",
+              ""model"": ""gemini-2.5-pro""
+            }
+          }
+        ]
+      },
+      {
+        ""@type"": ""type.googleapis.com/google.rpc.RetryInfo"",
+        ""retryDelay"": ""34s""
+      }
+    ]
+  }
+}
+]"
+2026-07-16 10:25:24.039782+00,gemini,gemini-2.5-pro,429,"gemini returned error 429: [{
+  ""error"": {
+    ""code"": 429,
+    ""message"": ""You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.5-pro\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.5-pro\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.5-pro\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.5-pro\nPlease retry in 36.053026088s."",
+    ""status"": ""RESOURCE_EXHAUSTED"",
+    ""details"": [
+      {
+        ""@type"": ""type.googleapis.com/google.rpc.Help"",
+        ""links"": [
+          {
+            ""description"": ""Learn more about Gemini API quotas"",
+            ""url"": ""https://ai.google.dev/gemini-api/docs/rate-limits""
+          }
+        ]
+      },
+      {
+        ""@type"": ""type.googleapis.com/google.rpc.QuotaFailure"",
+        ""violations"": [
+          {
+            ""quotaMetric"": ""generativelanguage.googleapis.com/generate_content_free_tier_input_token_count"",
+            ""quotaId"": ""GenerateContentInputTokensPerModelPerMinute-FreeTier"",
+            ""quotaDimensions"": {
+              ""location"": ""global"",
+              ""model"": ""gemini-2.5-pro""
+            }
+          },
+          {
+            ""quotaMetric"": ""generativelanguage.googleapis.com/generate_content_free_tier_requests"",
+            ""quotaId"": ""GenerateRequestsPerMinutePerProjectPerModel-FreeTier"",
+            ""quotaDimensions"": {
+              ""location"": ""global"",
+              ""model"": ""gemini-2.5-pro""
+            }
+          },
+          {
+            ""quotaMetric"": ""generativelanguage.googleapis.com/generate_content_free_tier_requests"",
+            ""quotaId"": ""GenerateRequestsPerDayPerProjectPerModel-FreeTier"",
+            ""quotaDimensions"": {
+              ""model"": ""gemini-2.5-pro"",
+              ""location"": ""global""
+            }
+          },
+          {
+            ""quotaMetric"": ""generativelanguage.googleapis.com/generate_content_free_tier_input_token_count"",
+            ""quotaId"": ""GenerateContentInputTokensPerModelPerDay-FreeTier"",
+            ""quotaDimensions"": {
+              ""model"": ""gemini-2.5-pro"",
+              ""location"": ""global""
+            }
+          }
+        ]
+      },
+      {
+        ""@type"": ""type.googleapis.com/google.rpc.RetryInfo"",
+        ""retryDelay"": ""36s""
+      }
+    ]
+  }
+}
+]"
+2026-07-16 10:25:21.574824+00,openrouter,anthropic/claude-sonnet-4,402,"openrouter returned error 402: Insufficient credits. This account never purchased credits. Make sure your key is on the correct account or org, and if so, purchase more at https://openrouter.ai/settings/credits"
+2026-07-16 10:25:19.869947+00,openrouter,anthropic/claude-sonnet-4,402,"openrouter returned error 402: This request requires more credits, or fewer max_tokens. You requested up to 6000 tokens, but can only afford 2408. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account"
+2026-07-16 10:25:18.411679+00,openrouter,anthropic/claude-sonnet-4,402,"openrouter returned error 402: This request requires more credits, or fewer max_tokens. You requested up to 6000 tokens, but can only afford 2408. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account"
+2026-07-08 08:13:19.700258+00,groq,llama-3.3-70b-versatile,413,"groq returned error 413: Request too large for model `llama-3.3-70b-versatile` in organization `org_01kwy2yph3facs1fb1dqcg90b7` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Requested 13565, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing"
+2026-07-08 08:12:30.432513+00,gemini,gemini-2.0-flash,429,"gemini returned error 429: [{
+  ""error"": {
+    ""code"": 429,
+    ""message"": ""You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\nPlease retry in 30.040290095s."",
+    ""status"": ""RESOURCE_EXHAUSTED"",
+    ""details"": [
+      {
+        ""@type"": ""type.googleapis.com/google.rpc.Help"",
+        ""links"": [
+          {
+            ""description"": ""Learn more about Gemini API quotas"",
+            ""url"": ""https://ai.google.dev/gemini-api/docs/rate-limits""
+          }
+        ]
+      },
+      {
+        ""@type"": ""type.googleapis.com/google.rpc.QuotaFailure"",
+        ""violations"": [
+          {
+            ""quotaMetric"": ""generativelanguage.googleapis.com/generate_content_free_tier_input_token_count"",
+            ""quotaId"": ""GenerateContentInputTokensPerModelPerMinute-FreeTier"",
+            ""quotaDimensions"": {
+              ""location"": ""global"",
+              ""model"": ""gemini-2.0-flash""
+            }
+          },
+          {
+            ""quotaMetric"": ""generativelanguage.googleapis.com/generate_content_free_tier_requests"",
+            ""quotaId"": ""GenerateRequestsPerMinutePerProjectPerModel-FreeTier"",
+            ""quotaDimensions"": {
+              ""location"": ""global"",
+              ""model"": ""gemini-2.0-flash""
+            }
+          },
+          {
+            ""quotaMetric"": ""generativelanguage.googleapis.com/generate_content_free_tier_requests"",
+            ""quotaId"": ""GenerateRequestsPerDayPerProjectPerModel-FreeTier"",
+            ""quotaDimensions"": {
+              ""location"": ""global"",
+              ""model"": ""gemini-2.0-flash""
+            }
+          }
+        ]
+      },
+      {
+        ""@type"": ""type.googleapis.com/google.rpc.RetryInfo"",
+        ""retryDelay"": ""30s""
+      }
+    ]
+  }
+}
+]"
+2026-07-08 08:12:29.296297+00,gemini,gemini-2.0-flash,429,"gemini returned error 429: [{
+  ""error"": {
+    ""code"": 429,
+    ""message"": ""You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\nPlease retry in 30.846128894s."",
+    ""status"": ""RESOURCE_EXHAUSTED"",
+    ""details"": [
+      {
+        ""@type"": ""type.googleapis.com/google.rpc.Help"",
+        ""links"": [
+          {
+            ""description"": ""Learn more about Gemini API quotas"",
+            ""url"": ""https://ai.google.dev/gemini-api/docs/rate-limits""
+          }
+        ]
+      },
+      {
+        ""@type"": ""type.googleapis.com/google.rpc.QuotaFailure"",
+        ""violations"": [
+          {
+            ""quotaMetric"": ""generativelanguage.googleapis.com/generate_content_free_tier_requests"",
+            ""quotaId"": ""GenerateRequestsPerDayPerProjectPerModel-FreeTier"",
+            ""quotaDimensions"": {
+              ""location"": ""global"",
+              ""model"": ""gemini-2.0-flash""
+            }
+          },
+          {
+            ""quotaMetric"": ""generativelanguage.googleapis.com/generate_content_free_tier_requests"",
+            ""quotaId"": ""GenerateRequestsPerMinutePerProjectPerModel-FreeTier"",
+            ""quotaDimensions"": {
+              ""location"": ""global"",
+              ""model"": ""gemini-2.0-flash""
+            }
+          },
+          {
+            ""quotaMetric"": ""generativelanguage.googleapis.com/generate_content_free_tier_input_token_count"",
+            ""quotaId"": ""GenerateContentInputTokensPerModelPerMinute-FreeTier"",
+            ""quotaDimensions"": {
+              ""location"": ""global"",
+              ""model"": ""gemini-2.0-flash""
+            }
+          }
+        ]
+      },
+      {
+        ""@type"": ""type.googleapis.com/google.rpc.RetryInfo"",
+        ""retryDelay"": ""30s""
+      }
+    ]
+  }
+}
+]"
+2026-07-08 08:12:27.318936+00,groq,llama-3.3-70b-versatile,413,"groq returned error 413: Request too large for model `llama-3.3-70b-versatile` in organization `org_01kwy2yph3facs1fb1dqcg90b7` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Requested 13339, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing"
+2026-07-08 06:52:35.269566+00,gemini,gemini-2.0-flash,429,"gemini returned error 429: [{
+  ""error"": {
+    ""code"": 429,
+    ""message"": ""You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\nPlease retry in 24.842452031s."",
+    ""status"": ""RESOURCE_EXHAUSTED"",
+    ""details"": [
+      {
+        ""@type"": ""type.googleapis.com/google.rpc.Help"",
+        ""links"": [
+          {
+            ""description"": ""Learn more about Gemini API quotas"",
+            ""url"": ""https://ai.google.dev/gemini-api/docs/rate-limits""
+          }
+        ]
+      },
+      {
+        ""@type"": ""type.googleapis.com/google.rpc.QuotaFailure"",
+        ""violations"": [
+          {
+            ""quotaMetric"": ""generativelanguage.googleapis.com/generate_content_free_tier_input_token_count"",
+            ""quotaId"": ""GenerateContentInputTokensPerModelPerMinute-FreeTier"",
+            ""quotaDimensions"": {
+              ""location"": ""global"",
+              ""model"": ""gemini-2.0-flash""
+            }
+          },
+          {
+            ""quotaMetric"": ""generativelanguage.googleapis.com/generate_content_free_tier_requests"",
+            ""quotaId"": ""GenerateRequestsPerMinutePerProjectPerModel-FreeTier"",
+            ""quotaDimensions"": {
+              ""location"": ""global"",
+              ""model"": ""gemini-2.0-flash""
+            }
+          },
+          {
+            ""quotaMetric"": ""generativelanguage.googleapis.com/generate_content_free_tier_requests"",
+            ""quotaId"": ""GenerateRequestsPerDayPerProjectPerModel-FreeTier"",
+            ""quotaDimensions"": {
+              ""location"": ""global"",
+              ""model"": ""gemini-2.0-flash""
+            }
+          }
+        ]
+      },
+      {
+        ""@type"": ""type.googleapis.com/google.rpc.RetryInfo"",
+        ""retryDelay"": ""24s""
+      }
+    ]
+  }
+}
+]"
+2026-07-08 06:52:34.477487+00,gemini,gemini-2.0-flash,429,"gemini returned error 429: [{
+  ""error"": {
+    ""code"": 429,
+    ""message"": ""You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\nPlease retry in 25.617311562s."",
+    ""status"": ""RESOURCE_EXHAUSTED"",
+    ""details"": [
+      {
+        ""@type"": ""type.googleapis.com/google.rpc.Help"",
+        ""links"": [
+          {
+            ""description"": ""Learn more about Gemini API quotas"",
+            ""url"": ""https://ai.google.dev/gemini-api/docs/rate-limits""
+          }
+        ]
+      },
+      {
+        ""@type"": ""type.googleapis.com/google.rpc.QuotaFailure"",
+        ""violations"": [
+          {
+            ""quotaMetric"": ""generativelanguage.googleapis.com/generate_content_free_tier_input_token_count"",
+            ""quotaId"": ""GenerateContentInputTokensPerModelPerMinute-FreeTier"",
+            ""quotaDimensions"": {
+              ""location"": ""global"",
+              ""model"": ""gemini-2.0-flash""
+            }
+          },
+          {
+            ""quotaMetric"": ""generativelanguage.googleapis.com/generate_content_free_tier_requests"",
+            ""quotaId"": ""GenerateRequestsPerMinutePerProjectPerModel-FreeTier"",
+            ""quotaDimensions"": {
+              ""location"": ""global"",
+              ""model"": ""gemini-2.0-flash""
+            }
+          },
+          {
+            ""quotaMetric"": ""generativelanguage.googleapis.com/generate_content_free_tier_requests"",
+            ""quotaId"": ""GenerateRequestsPerDayPerProjectPerModel-FreeTier"",
+            ""quotaDimensions"": {
+              ""location"": ""global"",
+              ""model"": ""gemini-2.0-flash""
+            }
+          }
+        ]
+      },
+      {
+        ""@type"": ""type.googleapis.com/google.rpc.RetryInfo"",
+        ""retryDelay"": ""25s""
+      }
+    ]
+  }
+}
+]"

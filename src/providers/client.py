@@ -55,11 +55,12 @@ def _get_client() -> httpx.AsyncClient:
 
 
 class ProviderError(Exception):
-    def __init__(self, status_code: int, message: str, is_rate_limit: bool = False, is_auth_error: bool = False):
+    def __init__(self, status_code: int, message: str, is_rate_limit: bool = False, is_auth_error: bool = False, is_request_error: bool = False):
         self.status_code = status_code
         self.message = message
         self.is_rate_limit = is_rate_limit
         self.is_auth_error = is_auth_error
+        self.is_request_error = is_request_error
         super().__init__(message)
 
 
@@ -172,7 +173,8 @@ def _handle_error_response(response: httpx.Response, provider: str):
     error_text = response.text
 
     is_rate_limit = status_code == 429
-    is_auth_error = status_code in (401, 403)
+    is_auth_error = status_code in (401, 403, 402)
+    is_request_error = status_code in (400, 404, 413, 422)
 
     # Try to parse json error if available
     try:
@@ -186,5 +188,6 @@ def _handle_error_response(response: httpx.Response, provider: str):
         status_code=status_code,
         message=f"{provider} returned error {status_code}: {error_text}",
         is_rate_limit=is_rate_limit,
-        is_auth_error=is_auth_error
+        is_auth_error=is_auth_error,
+        is_request_error=is_request_error
     )
