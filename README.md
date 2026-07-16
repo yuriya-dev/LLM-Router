@@ -13,6 +13,13 @@ Custom LLM Router adalah gateway API lokal/cloud berbasis FastAPI (Python) yang 
 - **Streaming Support**: Mendukung respon streaming penuh (`stream: true`).
 - **Supabase Connected**: Semua status kunci, penambahan akun, dan statistik panggilan (*request logs*) disimpan terpusat di cloud Supabase.
 
+## 📚 Dokumentasi
+
+Untuk rincian teknis lengkap mengenai arsitektur, endpoint API, dan cara deployment:
+- [Arsitektur & Alur Kerja](file:///Users/wahyutricahya/Work/llm-router/docs/architectur.md)
+- [API Reference](file:///Users/wahyutricahya/Work/llm-router/docs/api_reference.md)
+- [Panduan Deployment](file:///Users/wahyutricahya/Work/llm-router/docs/deployment.md)
+
 ---
 
 ## 🛠️ Langkah Setup Database (Supabase)
