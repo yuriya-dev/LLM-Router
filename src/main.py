@@ -41,7 +41,9 @@ def _get_rate_limit_key(request: Request) -> str:
     return get_remote_address(request)
 
 # Limiter uses the token/IP as the identity key
-limiter = Limiter(key_func=_get_rate_limit_key)
+# headers_enabled=True automatically adds X-RateLimit-Limit, X-RateLimit-Remaining, and X-RateLimit-Reset headers to the responses
+limiter = Limiter(key_func=_get_rate_limit_key, headers_enabled=True)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -152,6 +154,66 @@ async def list_models():
                 {"id": "llama3-8b", "object": "model", "owned_by": "meta"},
             ]
         }
+
+@app.get("/v1/quota", dependencies=[Depends(verify_api_key)])
+async def get_quota(request: Request):
+    """
+    Get the caller's current rate limit quota, remaining requests, and reset time.
+    Identifies the caller by Bearer token or client IP, matching the rate limit logic.
+    """
+    from limits import parse
+    import time
+    
+    identity = _get_rate_limit_key(request)
+    
+    # Primary Limit: RPM
+    rpm_item = parse(f"{settings.RATE_LIMIT_RPM}/minute")
+    # Burst Limit: Burst per second
+    burst_item = parse(f"{settings.RATE_LIMIT_BURST}/second")
+    
+    now = time.time()
+    
+    try:
+        rpm_stats = limiter.limiter.get_window_stats(rpm_item, identity)
+        rpm_remaining = rpm_stats.remaining
+        rpm_reset_seconds = max(0.0, rpm_stats.reset_time - now)
+        rpm_reset_time = rpm_stats.reset_time
+    except Exception:
+        rpm_remaining = settings.RATE_LIMIT_RPM
+        rpm_reset_seconds = 0.0
+        rpm_reset_time = now
+
+    try:
+        burst_stats = limiter.limiter.get_window_stats(burst_item, identity)
+        burst_remaining = burst_stats.remaining
+        burst_reset_seconds = max(0.0, burst_stats.reset_time - now)
+        burst_reset_time = burst_stats.reset_time
+    except Exception:
+        burst_remaining = settings.RATE_LIMIT_BURST
+        burst_reset_seconds = 0.0
+        burst_reset_time = now
+        
+    # Mask identity for security if it's a bearer token
+    masked_identity = identity
+    auth = request.headers.get("Authorization", "")
+    if auth.startswith("Bearer "):
+        masked_identity = identity[:8] + "..." if len(identity) > 12 else "token"
+
+    return {
+        "identity": masked_identity,
+        "rate_limit_minute": {
+            "limit": settings.RATE_LIMIT_RPM,
+            "remaining": rpm_remaining,
+            "reset_seconds": round(rpm_reset_seconds, 2),
+            "reset_time": round(rpm_reset_time, 2)
+        },
+        "rate_limit_burst_second": {
+            "limit": settings.RATE_LIMIT_BURST,
+            "remaining": burst_remaining,
+            "reset_seconds": round(burst_reset_seconds, 2),
+            "reset_time": round(burst_reset_time, 2)
+        }
+    }
 
 @app.post("/v1/chat/completions", dependencies=[Depends(verify_api_key)])
 @limiter.limit(lambda: f"{settings.RATE_LIMIT_RPM}/minute;{settings.RATE_LIMIT_BURST}/second")
