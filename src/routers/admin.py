@@ -44,12 +44,28 @@ class KeyResetRequest(BaseModel):
     status: str = Field("healthy", pattern="^(healthy|cooldown|dead)$")
 
 
+class KeyUpdateRequest(BaseModel):
+    provider: Optional[str] = None
+    key_name: Optional[str] = None
+    key_value: Optional[str] = None
+    priority: Optional[int] = Field(None, ge=1)
+    status: Optional[str] = Field(None, pattern="^(healthy|cooldown|dead)$")
+
+
 class RouteCreateRequest(BaseModel):
     virtual_model: str = Field(..., description="Virtual model alias (e.g. 'combo-smart')")
     provider: str = Field(..., description="Target provider")
     target_model: str = Field(..., description="Actual model name sent to provider")
     priority: int = Field(1, ge=1)
     enabled: bool = True
+
+
+class RouteUpdateRequest(BaseModel):
+    virtual_model: Optional[str] = None
+    provider: Optional[str] = None
+    target_model: Optional[str] = None
+    priority: Optional[int] = Field(None, ge=1)
+    enabled: Optional[bool] = None
 
 
 # ---------------------------------------------------------------------------
@@ -102,6 +118,31 @@ async def create_key(payload: KeyCreateRequest):
     except Exception as e:
         if "duplicate" in str(e).lower() or "unique" in str(e).lower():
             raise HTTPException(status_code=409, detail="A key with this value already exists.")
+        raise HTTPException(status_code=500, detail=f"DB error: {e}")
+
+
+# ---------------------------------------------------------------------------
+# PATCH /admin/keys/{key_id}  — update details of an existing key
+# ---------------------------------------------------------------------------
+
+@router.patch("/keys/{key_id}", dependencies=[Depends(verify_admin_key)])
+async def update_key(key_id: str, payload: KeyUpdateRequest):
+    """Update details of an existing provider key."""
+    update_data = {k: v for k, v in payload.model_dump().items() if v is not None}
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No fields provided for update")
+
+    def _update():
+        return supabase.table("provider_keys").update(update_data).eq("id", key_id).execute()
+
+    try:
+        response = await asyncio.to_thread(_update)
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Key not found")
+        return {"message": "Key updated", "key": response.data[0]}
+    except HTTPException:
+        raise
+    except Exception as e:
         raise HTTPException(status_code=500, detail=f"DB error: {e}")
 
 
@@ -290,6 +331,54 @@ async def list_routes():
 
 
 # ---------------------------------------------------------------------------
+# PATCH /admin/routes/{route_id}  — update a route
+# ---------------------------------------------------------------------------
+
+@router.patch("/routes/{route_id}", dependencies=[Depends(verify_admin_key)])
+async def update_route(route_id: str, payload: RouteUpdateRequest):
+    """Update an existing model route and refresh cache."""
+    update_data = {k: v for k, v in payload.model_dump().items() if v is not None}
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No fields provided for update")
+
+    def _update():
+        return supabase.table("model_routes").update(update_data).eq("id", route_id).execute()
+
+    try:
+        response = await asyncio.to_thread(_update)
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Route not found")
+        await refresh_route_cache(supabase)
+        return {"message": "Route updated and cache refreshed", "route": response.data[0]}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"DB error: {e}")
+
+
+# ---------------------------------------------------------------------------
+# DELETE /admin/routes/{route_id}  — delete a route
+# ---------------------------------------------------------------------------
+
+@router.delete("/routes/{route_id}", dependencies=[Depends(verify_admin_key)])
+async def delete_route(route_id: str):
+    """Delete a model route from dynamic routing table and refresh cache."""
+    def _delete():
+        return supabase.table("model_routes").delete().eq("id", route_id).execute()
+
+    try:
+        response = await asyncio.to_thread(_delete)
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Route not found")
+        await refresh_route_cache(supabase)
+        return {"message": "Route deleted and cache refreshed"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"DB error: {e}")
+
+
+# ---------------------------------------------------------------------------
 # POST /admin/routes/refresh  — force reload route cache from DB
 # ---------------------------------------------------------------------------
 
@@ -301,3 +390,4 @@ async def force_refresh_routes():
         return {"message": "Route cache refreshed successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to refresh routes: {e}")
+
