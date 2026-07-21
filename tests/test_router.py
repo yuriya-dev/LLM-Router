@@ -65,6 +65,16 @@ class TestHeuristicFallback:
         chain = _heuristic_fallback("llama3-70b")
         assert chain[0][0] == "groq"
 
+    def test_gpt_prefix(self):
+        chain = _heuristic_fallback("gpt-4o-custom")
+        assert chain[0] == ("openai", "gpt-4o-custom")
+        assert chain[1] == ("openrouter", "openai/gpt-4o-custom")
+
+    def test_kimi_in_name(self):
+        chain = _heuristic_fallback("kimi-k1.5")
+        assert chain[0] == ("moonshot", "kimi-k1.5")
+        assert chain[1] == ("openrouter", "moonshotai/kimi-k1.5")
+
     def test_unknown_model_defaults_to_openrouter(self):
         chain = _heuristic_fallback("some-random-model-xyz")
         assert chain == [("openrouter", "some-random-model-xyz")]

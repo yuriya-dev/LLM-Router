@@ -142,8 +142,10 @@ async def list_models():
                 owned_by = "anthropic"
             elif "llama" in lower_id:
                 owned_by = "meta"
-            elif "gpt" in lower_id:
+            elif "gpt" in lower_id or lower_id.startswith("o1") or lower_id.startswith("o3"):
                 owned_by = "openai"
+            elif "kimi" in lower_id or "moonshot" in lower_id:
+                owned_by = "moonshotai"
             elif "deepseek" in lower_id:
                 owned_by = "deepseek"
             elif "mistral" in lower_id:

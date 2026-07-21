@@ -71,7 +71,15 @@ INSERT INTO model_routes (virtual_model, provider, target_model, priority) VALUE
     ('claude-3-5-sonnet','openrouter', 'anthropic/claude-3.5-sonnet',      1),
     ('claude-3-5-sonnet','gemini',     'gemini-1.5-pro',                   2),
     ('llama3-8b',        'groq',       'llama3-8b-8192',                   1),
-    ('llama3-8b',        'openrouter', 'meta-llama/llama-3-8b-instruct',   2)
+    ('llama3-8b',        'openrouter', 'meta-llama/llama-3-8b-instruct',   2),
+    ('gpt-4o',           'openai',     'gpt-4o',                          1),
+    ('gpt-4o',           'openrouter', 'openai/gpt-4o',                   2),
+    ('gpt-4o-mini',      'openai',     'gpt-4o-mini',                     1),
+    ('gpt-4o-mini',      'openrouter', 'openai/gpt-4o-mini',              2),
+    ('kimi-latest',      'moonshot',   'kimi-latest',                     1),
+    ('kimi-latest',      'openrouter', 'moonshotai/kimi-latest',            2),
+    ('moonshot-v1-8k',   'moonshot',   'moonshot-v1-8k',                  1),
+    ('moonshot-v1-8k',   'openrouter', 'moonshotai/moonshot-v1-8k',         2)
 ON CONFLICT DO NOTHING;
 
 -- Trigger to auto-update updated_at on provider_keys

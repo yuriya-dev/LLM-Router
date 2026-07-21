@@ -35,6 +35,52 @@ _STATIC_ROUTING: Dict[str, List[Tuple[str, str]]] = {
         ("groq", "llama-3.1-8b-instant"),
         ("openrouter", "meta-llama/llama-3-8b-instruct"),
     ],
+    # OpenAI models
+    "gpt-4o": [
+        ("openai", "gpt-4o"),
+        ("openrouter", "openai/gpt-4o"),
+    ],
+    "gpt-4o-mini": [
+        ("openai", "gpt-4o-mini"),
+        ("openrouter", "openai/gpt-4o-mini"),
+    ],
+    "gpt-4-turbo": [
+        ("openai", "gpt-4-turbo"),
+        ("openrouter", "openai/gpt-4-turbo"),
+    ],
+    "gpt-3.5-turbo": [
+        ("openai", "gpt-3.5-turbo"),
+        ("openrouter", "openai/gpt-3.5-turbo"),
+    ],
+    "o1": [
+        ("openai", "o1"),
+        ("openrouter", "openai/o1"),
+    ],
+    "o3-mini": [
+        ("openai", "o3-mini"),
+        ("openrouter", "openai/o3-mini"),
+    ],
+    # Kimi / Moonshot models
+    "kimi-latest": [
+        ("moonshot", "kimi-latest"),
+        ("openrouter", "moonshotai/kimi-latest"),
+    ],
+    "kimi-k1.5": [
+        ("moonshot", "kimi-k1.5"),
+        ("openrouter", "moonshotai/kimi-k1.5"),
+    ],
+    "moonshot-v1-8k": [
+        ("moonshot", "moonshot-v1-8k"),
+        ("openrouter", "moonshotai/moonshot-v1-8k"),
+    ],
+    "moonshot-v1-32k": [
+        ("moonshot", "moonshot-v1-32k"),
+        ("openrouter", "moonshotai/moonshot-v1-32k"),
+    ],
+    "moonshot-v1-128k": [
+        ("moonshot", "moonshot-v1-128k"),
+        ("openrouter", "moonshotai/moonshot-v1-128k"),
+    ],
 }
 
 # ---------------------------------------------------------------------------
@@ -119,8 +165,12 @@ def _heuristic_fallback(requested_model: str) -> List[Tuple[str, str]]:
         return [("gemini", target), ("openrouter", f"google/{target}")]
     elif requested_model.startswith("claude-"):
         return [("openrouter", f"anthropic/{requested_model}")]
-    elif "llama" in requested_model.lower():
+    elif "llama" in model_lower:
         return [("groq", requested_model), ("openrouter", requested_model)]
+    elif "gpt-" in model_lower or model_lower.startswith("o1") or model_lower.startswith("o3"):
+        return [("openai", requested_model), ("openrouter", f"openai/{requested_model}")]
+    elif "kimi" in model_lower or "moonshot" in model_lower:
+        return [("moonshot", requested_model), ("openrouter", f"moonshotai/{requested_model}")]
     # Default: OpenRouter supports almost everything
     return [("openrouter", requested_model)]
 
