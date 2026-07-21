@@ -10,8 +10,9 @@ PROVIDER_ENDPOINTS = {
     "openrouter": "https://openrouter.ai/api/v1/chat/completions",
     "kilo": "https://api.kilo.ai/api/gateway/chat/completions",
     "cerebras": "https://api.cerebras.ai/v1/chat/completions",
-    "cerebas": "https://api.cerebras.ai/v1/chat/completions",  # support potential typo/alternative spelling
     "mistral": "https://api.mistral.ai/v1/chat/completions",
+    "openai": "https://api.openai.com/v1/chat/completions",
+    "moonshot": "https://api.moonshot.ai/v1/chat/completions",
 }
 
 # Per-provider timeouts (seconds) to enable faster fallback when a provider hangs
@@ -23,6 +24,8 @@ PROVIDER_TIMEOUTS = {
     "cerebras": httpx.Timeout(30.0),
     "cerebas": httpx.Timeout(30.0),
     "mistral": httpx.Timeout(30.0),
+    "openai": httpx.Timeout(45.0),
+    "moonshot": httpx.Timeout(45.0),
 }
 
 # Shared HTTP client — initialized once at app startup via init_http_client()
