@@ -24,6 +24,20 @@ CREATE INDEX IF NOT EXISTS idx_provider_keys_routing
 ON provider_keys(provider, status, priority) 
 WHERE status = 'healthy';
 
+-- Table: client_keys (Multi-Tenant Authentication)
+CREATE TABLE IF NOT EXISTS client_keys (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    key_name TEXT NOT NULL,
+    key_hash TEXT NOT NULL UNIQUE,  -- SHA-256 hash of the client API key
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    allowed_models JSONB,            -- Array of allowed model names (null = all)
+    daily_token_limit INTEGER,       -- Max tokens allowed per day (null = unlimited)
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_client_keys_lookup ON client_keys(key_hash) WHERE is_active = TRUE;
+
 -- Table: request_logs
 CREATE TABLE IF NOT EXISTS request_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -35,6 +49,9 @@ CREATE TABLE IF NOT EXISTS request_logs (
     latency_ms INTEGER,
     status_code INTEGER,
     error_message TEXT,
+    request_id TEXT,                 -- Tracing request ID (X-Request-ID)
+    client_key_id UUID REFERENCES client_keys(id) ON DELETE SET NULL,
+    metadata JSONB,                  -- User-defined arbitrary metadata
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -79,7 +96,39 @@ INSERT INTO model_routes (virtual_model, provider, target_model, priority) VALUE
     ('kimi-latest',      'moonshot',   'kimi-latest',                     1),
     ('kimi-latest',      'openrouter', 'moonshotai/kimi-latest',            2),
     ('moonshot-v1-8k',   'moonshot',   'moonshot-v1-8k',                  1),
-    ('moonshot-v1-8k',   'openrouter', 'moonshotai/moonshot-v1-8k',         2)
+    ('moonshot-v1-8k',   'openrouter', 'moonshotai/moonshot-v1-8k',         2),
+    ('deepseek-v4.1-flash', 'dashscope', 'deepseek-v4.1-flash',             1),
+    ('deepseek-v4.1-flash', 'openrouter', 'deepseek/deepseek-chat',          2),
+    ('qwen3.8-max',         'dashscope', 'qwen3.8-max',                    1),
+    ('qwen3.8-max',         'openrouter', 'qwen/qwen3.8-max',               2),
+    ('qwen3.7-max',         'dashscope', 'qwen3.7-max',                    1),
+    ('qwen3.7-max',         'openrouter', 'qwen/qwen3.7-max',               2),
+    ('qwen3.7-plus',        'dashscope', 'qwen3.7-plus',                   1),
+    ('qwen3.7-plus',        'openrouter', 'qwen/qwen3.7-plus',              2),
+    ('qwen3.7-flash',       'dashscope', 'qwen3.7-flash',                  1),
+    ('qwen3.7-flash',       'openrouter', 'qwen/qwen3.7-flash',             2),
+    ('qwen3.6-plus',        'dashscope', 'qwen3.6-plus',                   1),
+    ('qwen3.6-plus',        'openrouter', 'qwen/qwen3.6-plus',              2),
+    ('qwen3.6-flash',       'dashscope', 'qwen3.6-flash',                  1),
+    ('qwen3.6-flash',       'openrouter', 'qwen/qwen3.6-flash',             2),
+    ('qwen3.5-plus',        'dashscope', 'qwen3.5-plus',                   1),
+    ('qwen3.5-plus',        'openrouter', 'qwen/qwen3.5-plus',              2),
+    ('qwen3.5-flash',       'dashscope', 'qwen3.5-flash',                  1),
+    ('qwen3.5-flash',       'openrouter', 'qwen/qwen3.5-flash',             2),
+    ('qwen3-coder-plus',    'dashscope', 'qwen3-coder-plus',               1),
+    ('qwen3-coder-plus',    'openrouter', 'qwen/qwen3-coder-plus',          2),
+    ('qwen3-coder-flash',   'dashscope', 'qwen3-coder-flash',              1),
+    ('qwen3-coder-flash',   'openrouter', 'qwen/qwen3-coder-flash',         2),
+    ('qwen3-max',           'dashscope', 'qwen3-max',                      1),
+    ('qwen3-max',           'openrouter', 'qwen/qwen3-max',                 2),
+    ('qwen3-next-80b-a3b-thinking', 'dashscope', 'qwen3-next-80b-a3b-thinking', 1),
+    ('qwen3-next-80b-a3b-thinking', 'openrouter', 'qwen/qwen3-next-80b-a3b-thinking', 2),
+    ('qwen3-next-80b-a3b-instruct', 'dashscope', 'qwen3-next-80b-a3b-instruct', 1),
+    ('qwen3-next-80b-a3b-instruct', 'openrouter', 'qwen/qwen3-next-80b-a3b-instruct', 2),
+    ('qwen3-32b',           'dashscope', 'qwen3-32b',                      1),
+    ('qwen3-32b',           'openrouter', 'qwen/qwen3-32b',                 2),
+    ('qwen3-30b-a3b',       'dashscope', 'qwen3-30b-a3b',                  1),
+    ('qwen3-30b-a3b',       'openrouter', 'qwen/qwen3-30b-a3b',             2)
 ON CONFLICT DO NOTHING;
 
 -- Trigger to auto-update updated_at on provider_keys
