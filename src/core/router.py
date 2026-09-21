@@ -4,6 +4,52 @@ import time
 from typing import List, Tuple, Dict, Optional
 from supabase import Client
 
+from src.core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
+# ---------------------------------------------------------------------------
+# Semantic capability metadata
+# ---------------------------------------------------------------------------
+# Tells the router which models support multimodal input (image_url).
+# Models NOT listed here are assumed text-only — they will be deprioritised
+# when the request contains image content (see filter_chain_for_multimodal).
+MODEL_CAPABILITIES: Dict[str, Dict] = {
+    # Google Gemini — all multimodal
+    "gemini-2.5-pro":    {"multimodal": True, "context_window": 1_000_000},
+    "gemini-2.0-flash":  {"multimodal": True, "context_window": 1_000_000},
+    "gemini-3.5-flash":  {"multimodal": True, "context_window": 1_000_000},
+    # OpenAI vision models
+    "gpt-4o":            {"multimodal": True, "context_window": 128_000},
+    "gpt-4o-mini":       {"multimodal": True, "context_window": 128_000},
+    "gpt-4-turbo":       {"multimodal": True, "context_window": 128_000},
+    # Anthropic — all Claude 3+ models support vision
+    "claude-sonnet-4":   {"multimodal": True, "context_window": 200_000},
+    "claude-3-5-sonnet": {"multimodal": True, "context_window": 200_000},
+    # DeepSeek — vision model
+    "deepseek-v4.1-flash": {"multimodal": True, "context_window": 128_000},
+    # Qwen models with vision support
+    "qwen3.8-max":        {"multimodal": True, "context_window": 1_000_000},
+    "qwen3.7-max":        {"multimodal": True, "context_window": 1_000_000},
+    "qwen3.7-plus":       {"multimodal": True, "context_window": 1_000_000},
+}
+
+
+def filter_chain_for_multimodal(
+    chain: List[Tuple[str, str]]
+) -> List[Tuple[str, str]]:
+    """
+    For multimodal requests (messages with image_url), prefer models that are
+    known to support images.  Falls back to the original full chain if no
+    multimodal-capable provider is available (graceful degradation).
+    """
+    capable = [
+        (prov, mdl) for prov, mdl in chain
+        if MODEL_CAPABILITIES.get(mdl, {}).get("multimodal", False)
+    ]
+    return capable if capable else chain  # Graceful degradation
+
+
 # ---------------------------------------------------------------------------
 # Static fallback (used when DB is unreachable or model_routes table is empty)
 # This is the hardcoded routing kept as a safe default / bootstrap.
@@ -81,6 +127,80 @@ _STATIC_ROUTING: Dict[str, List[Tuple[str, str]]] = {
         ("moonshot", "moonshot-v1-128k"),
         ("openrouter", "moonshotai/moonshot-v1-128k"),
     ],
+    # DeepSeek models
+    "deepseek-v4.1-flash": [
+        ("dashscope", "deepseek-v4.1-flash"),
+        ("openrouter", "deepseek/deepseek-chat"),
+    ],
+    "deepseek-r1": [
+        ("dashscope", "deepseek-r1"),
+        ("openrouter", "deepseek/deepseek-r1"),
+    ],
+    "deepseek-v3": [
+        ("dashscope", "deepseek-v3"),
+        ("openrouter", "deepseek/deepseek-chat"),
+    ],
+    # Qwen models (DashScope / QwenCloud)
+    "qwen3.8-max": [
+        ("dashscope", "qwen3.8-max"),
+        ("openrouter", "qwen/qwen3.8-max"),
+    ],
+    "qwen3.7-max": [
+        ("dashscope", "qwen3.7-max"),
+        ("openrouter", "qwen/qwen3.7-max"),
+    ],
+    "qwen3.7-plus": [
+        ("dashscope", "qwen3.7-plus"),
+        ("openrouter", "qwen/qwen3.7-plus"),
+    ],
+    "qwen3.7-flash": [
+        ("dashscope", "qwen3.7-flash"),
+        ("openrouter", "qwen/qwen3.7-flash"),
+    ],
+    "qwen3.6-plus": [
+        ("dashscope", "qwen3.6-plus"),
+        ("openrouter", "qwen/qwen3.6-plus"),
+    ],
+    "qwen3.6-flash": [
+        ("dashscope", "qwen3.6-flash"),
+        ("openrouter", "qwen/qwen3.6-flash"),
+    ],
+    "qwen3.5-plus": [
+        ("dashscope", "qwen3.5-plus"),
+        ("openrouter", "qwen/qwen3.5-plus"),
+    ],
+    "qwen3.5-flash": [
+        ("dashscope", "qwen3.5-flash"),
+        ("openrouter", "qwen/qwen3.5-flash"),
+    ],
+    "qwen3-coder-plus": [
+        ("dashscope", "qwen3-coder-plus"),
+        ("openrouter", "qwen/qwen3-coder-plus"),
+    ],
+    "qwen3-coder-flash": [
+        ("dashscope", "qwen3-coder-flash"),
+        ("openrouter", "qwen/qwen3-coder-flash"),
+    ],
+    "qwen3-max": [
+        ("dashscope", "qwen3-max"),
+        ("openrouter", "qwen/qwen3-max"),
+    ],
+    "qwen3-next-80b-a3b-thinking": [
+        ("dashscope", "qwen3-next-80b-a3b-thinking"),
+        ("openrouter", "qwen/qwen3-next-80b-a3b-thinking"),
+    ],
+    "qwen3-next-80b-a3b-instruct": [
+        ("dashscope", "qwen3-next-80b-a3b-instruct"),
+        ("openrouter", "qwen/qwen3-next-80b-a3b-instruct"),
+    ],
+    "qwen3-32b": [
+        ("dashscope", "qwen3-32b"),
+        ("openrouter", "qwen/qwen3-32b"),
+    ],
+    "qwen3-30b-a3b": [
+        ("dashscope", "qwen3-30b-a3b"),
+        ("openrouter", "qwen/qwen3-30b-a3b"),
+    ],
 }
 
 # ---------------------------------------------------------------------------
@@ -114,7 +234,8 @@ async def _load_routes_from_db(supabase: Client) -> Dict[str, List[Tuple[str, st
             routes.setdefault(key, []).append((row["provider"], row["target_model"]))
         return routes
     except Exception as e:
-        print(f"[router] Failed to load routes from DB: {e}. Using static fallback.")
+        logger.error(f"[router] Failed to load routes from DB: {e}. Using static fallback.",
+                     extra={"event": "route_db_error"}, exc_info=True)
         return {}
 
 
@@ -129,8 +250,16 @@ async def refresh_route_cache(supabase: Client):
         # Merge: DB routes override static ones, static ones fill the gaps
         _route_cache = {**_STATIC_ROUTING, **db_routes}
         _cache_loaded_at = time.monotonic()
-        print(f"[router] Route cache refreshed — {len(_route_cache)} entries "
-              f"({len(db_routes)} from DB, rest from static defaults).")
+        logger.info(
+            f"[router] Route cache refreshed — {len(_route_cache)} entries "
+            f"({len(db_routes)} from DB, {len(_STATIC_ROUTING)} static defaults)",
+            extra={
+                "event": "route_cache_refreshed",
+                "total": len(_route_cache),
+                "from_db": len(db_routes),
+                "static": len(_STATIC_ROUTING),
+            }
+        )
 
 
 async def get_route_cache(supabase: Client) -> Dict[str, List[Tuple[str, str]]]:
@@ -171,6 +300,12 @@ def _heuristic_fallback(requested_model: str) -> List[Tuple[str, str]]:
         return [("openai", requested_model), ("openrouter", f"openai/{requested_model}")]
     elif "kimi" in model_lower or "moonshot" in model_lower:
         return [("moonshot", requested_model), ("openrouter", f"moonshotai/{requested_model}")]
+    elif "deepseek" in model_lower:
+        openrouter_target = requested_model if requested_model.startswith("deepseek/") else f"deepseek/{requested_model}"
+        return [("dashscope", requested_model), ("openrouter", openrouter_target)]
+    elif "qwen" in model_lower:
+        openrouter_target = requested_model if requested_model.startswith("qwen/") else f"qwen/{requested_model}"
+        return [("dashscope", requested_model), ("openrouter", openrouter_target)]
     # Default: OpenRouter supports almost everything
     return [("openrouter", requested_model)]
 
