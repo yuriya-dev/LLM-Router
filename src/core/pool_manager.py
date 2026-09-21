@@ -15,7 +15,11 @@ from src.core.logging_config import get_logger
 logger = get_logger(__name__)
 
 # Shared Supabase client — also exported so router.py and admin.py can reuse it
-supabase: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+supabase: Optional[Client] = (
+    create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+    if settings.SUPABASE_URL and settings.SUPABASE_KEY
+    else None
+)
 
 
 # ── Cooldown Restoration ──────────────────────────────────────────────────────
@@ -31,6 +35,8 @@ async def restore_all_expired_cooldowns() -> None:
     now = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
     def _restore():
+        if not supabase:
+            return
         try:
             result = supabase.table("provider_keys")\
                 .update({"status": "healthy", "cooldown_until": None, "error_count": 0})\
@@ -66,6 +72,9 @@ async def get_healthy_keys(provider: str) -> List[Dict[str, Any]]:
         return cached
 
     def _fetch():
+        if not supabase:
+            logger.warning("[pool_manager] SUPABASE_URL/KEY missing in env variables")
+            return []
         try:
             return supabase.table("provider_keys")\
                 .select("id, provider, key_name, key_value, priority")\
@@ -108,6 +117,8 @@ async def mark_key_cooldown(
     ).isoformat()
 
     def _update():
+        if not supabase:
+            return
         try:
             supabase.rpc("increment_error_count", {"key_id": key_id}).execute()
             supabase.table("provider_keys")\
@@ -135,6 +146,8 @@ async def mark_key_dead(
 ) -> None:
     """Mark a key as dead (auth error) and invalidate its provider's cache entry."""
     def _update():
+        if not supabase:
+            return
         try:
             supabase.rpc("increment_error_count", {"key_id": key_id}).execute()
             supabase.table("provider_keys")\
@@ -158,6 +171,8 @@ async def update_key_last_used(key_id: str) -> None:
     now = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
     def _update():
+        if not supabase:
+            return
         try:
             supabase.table("provider_keys")\
                 .update({"last_used_at": now})\
@@ -186,6 +201,8 @@ async def log_request(
 ) -> None:
     """Log a completed request to Supabase for metrics and billing."""
     def _insert():
+        if not supabase:
+            return
         try:
             supabase.table("request_logs").insert({
                 "provider": provider,
@@ -226,6 +243,8 @@ async def get_client_key_info(raw_key: str) -> Optional[Dict[str, Any]]:
     key_hash = _hash_key(raw_key)
 
     def _query():
+        if not supabase:
+            return None
         try:
             result = supabase.table("client_keys")\
                 .select("id, key_name, is_active, allowed_models, daily_token_limit")\
@@ -251,6 +270,8 @@ async def create_client_key(key_name: str, allowed_models: Optional[list] = None
     key_hash = _hash_key(raw_key)
 
     def _insert():
+        if not supabase:
+            raise RuntimeError("Supabase client not initialized. Check SUPABASE_URL and SUPABASE_KEY.")
         return supabase.table("client_keys").insert({
             "key_name": key_name,
             "key_hash": key_hash,

@@ -4,8 +4,8 @@ from typing import Optional, List
 
 
 class Settings(BaseSettings):
-    SUPABASE_URL: str
-    SUPABASE_KEY: str
+    SUPABASE_URL: str = ""
+    SUPABASE_KEY: str = ""
     PORT: int = 8000
 
     # ── Authentication ────────────────────────────────────────────────────────
