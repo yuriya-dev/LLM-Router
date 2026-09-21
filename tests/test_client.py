@@ -130,10 +130,16 @@ class TestBuildHeaders:
         assert "X-Title" in headers
 
     def test_non_openrouter_no_extra_headers(self):
-        for provider in ("gemini", "groq"):
+        for provider in ("gemini", "groq", "dashscope", "qwen"):
             headers = _build_headers(provider, "key")
             assert "HTTP-Referer" not in headers
             assert "X-Title" not in headers
+
+    def test_dashscope_endpoint_registered(self):
+        from src.providers.client import PROVIDER_ENDPOINTS, PROVIDER_TIMEOUTS
+        assert "dashscope" in PROVIDER_ENDPOINTS
+        assert PROVIDER_ENDPOINTS["dashscope"] == "https://maas.qwencloudapi.com/compatible-mode/v1/chat/completions"
+        assert "dashscope" in PROVIDER_TIMEOUTS
 
 
 # ── Tests: SSE token parsing (inline logic test) ──────────────────────────────

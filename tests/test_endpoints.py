@@ -45,3 +45,40 @@ def test_quota_endpoint():
     assert isinstance(burst_stats["remaining"], int)
     assert isinstance(burst_stats["reset_seconds"], (int, float))
     assert isinstance(burst_stats["reset_time"], (int, float))
+
+
+def test_models_endpoint():
+    headers = {"Authorization": f"Bearer {settings.ROUTER_API_KEY}"} if settings.ROUTER_API_KEY else {"Authorization": "Bearer test"}
+    response = client.get("/v1/models", headers=headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert "data" in data
+    model_ids = [m["id"] for m in data["data"]]
+    assert "deepseek-v4.1-flash" in model_ids
+    deepseek_model = next(m for m in data["data"] if m["id"] == "deepseek-v4.1-flash")
+    assert deepseek_model["owned_by"] == "deepseek"
+
+    assert "qwen3.8-max" in model_ids
+    qwen_model = next(m for m in data["data"] if m["id"] == "qwen3.8-max")
+    assert qwen_model["owned_by"] == "alibaba"
+
+
+def test_multimodal_chat_completion_schema():
+    from src.schemas import ChatCompletionRequest
+    payload = {
+        "model": "deepseek-v4.1-flash",
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "image_url", "image_url": {"url": "https://example.com/image.jpg"}},
+                    {"type": "text", "text": "Please only output the text content in the image."},
+                ],
+            }
+        ],
+    }
+    req = ChatCompletionRequest(**payload)
+    assert req.model == "deepseek-v4.1-flash"
+    assert len(req.messages) == 1
+    assert isinstance(req.messages[0].content, list)
+    assert req.messages[0].content[0]["type"] == "image_url"

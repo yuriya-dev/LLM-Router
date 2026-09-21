@@ -75,6 +75,16 @@ class TestHeuristicFallback:
         assert chain[0] == ("moonshot", "kimi-k1.5")
         assert chain[1] == ("openrouter", "moonshotai/kimi-k1.5")
 
+    def test_deepseek_in_name(self):
+        chain = _heuristic_fallback("deepseek-v3")
+        assert chain[0] == ("dashscope", "deepseek-v3")
+        assert chain[1] == ("openrouter", "deepseek/deepseek-v3")
+
+    def test_qwen_in_name(self):
+        chain = _heuristic_fallback("qwen-2.5-72b")
+        assert chain[0] == ("dashscope", "qwen-2.5-72b")
+        assert chain[1] == ("openrouter", "qwen/qwen-2.5-72b")
+
     def test_unknown_model_defaults_to_openrouter(self):
         chain = _heuristic_fallback("some-random-model-xyz")
         assert chain == [("openrouter", "some-random-model-xyz")]
@@ -83,6 +93,22 @@ class TestHeuristicFallback:
 # ── Tests: static routing table ───────────────────────────────────────────────
 
 class TestStaticRouting:
+    def test_deepseek_v4_1_flash_exists(self):
+        assert "deepseek-v4.1-flash" in _STATIC_ROUTING
+        assert _STATIC_ROUTING["deepseek-v4.1-flash"][0] == ("dashscope", "deepseek-v4.1-flash")
+
+    def test_qwen_cloud_models_exist(self):
+        qwen_models = [
+            "qwen3.8-max", "qwen3.7-max", "qwen3.7-plus", "qwen3.7-flash",
+            "qwen3.6-plus", "qwen3.6-flash", "qwen3.5-plus", "qwen3.5-flash",
+            "qwen3-coder-plus", "qwen3-coder-flash", "qwen3-max",
+            "qwen3-next-80b-a3b-thinking", "qwen3-next-80b-a3b-instruct",
+            "qwen3-32b", "qwen3-30b-a3b"
+        ]
+        for model in qwen_models:
+            assert model in _STATIC_ROUTING, f"Model {model} should be in _STATIC_ROUTING"
+            assert _STATIC_ROUTING[model][0] == ("dashscope", model)
+
     def test_combo_smart_exists(self):
         assert "combo-smart" in _STATIC_ROUTING
 
