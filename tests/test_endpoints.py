@@ -82,3 +82,15 @@ def test_multimodal_chat_completion_schema():
     assert len(req.messages) == 1
     assert isinstance(req.messages[0].content, list)
     assert req.messages[0].content[0]["type"] == "image_url"
+
+
+def test_healthz_endpoint():
+    response = client.get("/healthz")
+    assert response.status_code == 200
+    assert "status" in response.json()
+
+
+def test_metrics_endpoint():
+    response = client.get("/metrics")
+    assert response.status_code == 200
+    assert "llm_router_up 1" in response.text
