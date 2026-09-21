@@ -1,145 +1,132 @@
-# Arsitektur Custom LLM Router
+# Arsitektur Custom LLM Router v2.0
 
-Router ini berfungsi sebagai gateway/wrapper API di antara aplikasi klien (seperti VS Code Continue, Cline, Roo Code, atau aplikasi custom) dan penyedia layanan LLM (Gemini, Groq, OpenRouter). 
+LLM Router v2.0 berfungsi sebagai **Production-Grade API Gateway** yang berada di antara aplikasi klien (VS Code extensions, chatbot, RAG pipelines, AI agents) dan berbagai provider LLM (`gemini`, `groq`, `openrouter`, `dashscope/qwen`, `openai`, `moonshot`, `mistral`, `cerebras`).
 
-Layanan ini mengelola pool akun/kunci API (*API keys*) menggunakan database **Supabase** untuk melakukan rotasi kunci otomatis (*key rotation*), pemulihan rate limit (*cooldown*), penanganan kunci mati (*blacklist*), dan fallback antar-provider.
+Router ini mengelola pool API Key multi-account menggunakan **Supabase** dengan caching in-memory lokal, *circuit breaker*, enkripsi *at-rest*, *multi-tenancy*, *semantic routing*, dan *fallback chain* otomatis.
 
 ---
 
-## 🗺️ Diagram Aliran Request (Flowchart)
+## 🗺️ Diagram Aliran Request (Architecture Flowchart)
 
 ```mermaid
 graph TD
-    Client[Klien / Klien API] -->|Request: /v1/chat/completions| Gateway[FastAPI API Gateway]
-    Gateway -->|1. Resolve Model| Router[Routing Engine: router.py]
-    Router -->|Dapatkan Fallback Chain| PoolMgr[Account Pool Manager: pool_manager.py]
-    PoolMgr -->|2. Ambil Kunci Sehat| Supabase[(Supabase DB)]
-    Supabase -->|Kunci Aktif & Prioritas| PoolMgr
-    PoolMgr -->|3. Kirim Request & Catat Latency| ProviderClient[Provider Client: client.py]
+    Client[Klien / App / VS Code] -->|POST /v1/chat/completions + X-Request-ID| Gateway[FastAPI Gateway: main.py]
+    Gateway -->|1. Authenticate & Multi-Tenant Check| Auth[Auth Middleware]
+    Auth -->|2. Resolve Model & Multimodal Filter| Router[Routing Engine: router.py]
     
-    ProviderClient -->|Panggil API| Gemini[Google Gemini API]
-    ProviderClient -->|Panggil API| Groq[Groq API]
-    ProviderClient -->|Panggil API| OpenRouter[OpenRouter API]
+    Router -->|3. Check Circuit Breaker State| CB{Circuit Breaker: CLOSED?}
+    CB -->|OPEN / Skipping| NextProvider[Cobakan Provider Berikutnya]
+    CB -->|CLOSED| CacheCheck{Key Cache Hit?}
+    
+    CacheCheck -->|Cache Hit| KeyPool[Key Pool Memory Cache]
+    CacheCheck -->|Cache Miss| Supabase[(Supabase DB)]
+    Supabase -->|Sync Keys & Decrypt Fernet| KeyPool
+    
+    KeyPool -->|4. Execute Request + Retry Backoff| ProviderClient[Provider Client: client.py]
+    
+    ProviderClient -->|HTTP POST| DashScope[DashScope / Qwen API]
+    ProviderClient -->|HTTP POST| Gemini[Google Gemini API]
+    ProviderClient -->|HTTP POST| Groq[Groq API]
+    ProviderClient -->|HTTP POST| OpenRouter[OpenRouter API]
 
-    %% Sukses / Gagal handling
-    Gemini -.->|HTTP 200| Success[Respon Sukses ke Klien]
+    %% Sukses
+    DashScope -.->|HTTP 200| Success[Respon Sukses + X-Request-ID]
+    Gemini -.->|HTTP 200| Success
     Groq -.->|HTTP 200| Success
     OpenRouter -.->|HTTP 200| Success
-    Success -->|Log Request & Update last_used_at| Supabase
+    Success -->|Log Async Metrics & Metadata| Supabase
 
-    %% Error Handling
-    Gemini -.->|HTTP 429 / Rate Limit| Cooldown[Mark Cooldown: 60s]
-    Groq -.->|HTTP 401/403 / Auth| Dead[Mark Dead / Blacklist]
-    OpenRouter -.->|HTTP 500 / Network| TempCooldown[Short Cooldown: 15s]
-
-    Cooldown -->|Simpan Status| Supabase
-    Dead -->|Simpan Status| Supabase
-    TempCooldown -->|Simpan Status| Supabase
+    %% Error Resiliency
+    DashScope -.->|HTTP 429 / Rate Limit| Cooldown[Mark Cooldown & Invalidate Cache]
+    Gemini -.->|HTTP 401/403 / Auth| Dead[Mark Dead & Invalidate Cache]
+    Groq -.->|Transient Network Error| Retry[Retry Backoff: 0.5s, 1s, 2s]
     
-    Cooldown -->|Coba Kunci/Provider Berikutnya| PoolMgr
-    Dead -->|Coba Kunci/Provider Berikutnya| PoolMgr
-    TempCooldown -->|Coba Kunci/Provider Berikutnya| PoolMgr
+    Cooldown -->|Record Failure| CB
+    Dead -->|Record Failure| CB
+    CB -->|5 Failures -> OPEN 30s| NextProvider
 ```
 
 ---
 
-## 🧩 Komponen Sistem
+## 🧩 Komponen Sistem Utama
 
 ### 1. **FastAPI API Gateway (`src/main.py`)**
-* **Endpoint kompatibel dengan OpenAI**: Expose endpoint `/v1/chat/completions` (mendukung mode normal dan *streaming*) serta `/v1/models`.
-* **Autentikasi Router**: Opsional menggunakan API Key sendiri (`ROUTER_API_KEY`) lewat HTTP Bearer Token.
-* **Orkestrator Fallback & Retry**: Mengatur logika perulangan jika provider atau kunci mengalami kegagalan.
+* **OpenAI-Compatible Endpoint**: Memproses `/v1/chat/completions` (normal & streaming SSE) serta `/v1/models`.
+* **Request Tracing**: Menyertakan `X-Request-ID` unik di setiap request untuk kemudahan audit dan debugging.
+* **Per-Request Timeout**: Memungkinkan klien menentukan timeout via header `X-Request-Timeout` atau body field `timeout`.
+* **Background Task**: Menjalankan *periodic loop* setiap 30 detik untuk mengembalikan kunci cooldown yang telah habis masanya tanpa membebani request pengguna.
 
 ### 2. **Routing Engine (`src/core/router.py`)**
-* **Model Virtual**: Memetakan model virtual seperti `combo-smart` dan `combo-fast` ke rantai provider & model target.
-  * `combo-smart` ➔ `openrouter/anthropic/claude-3.5-sonnet` ➔ `gemini/gemini-1.5-pro`
-  * `combo-fast` ➔ `groq/llama3-8b-8192` ➔ `gemini/gemini-1.5-flash`
-* **Direct Fallback Mapping**: Jika klien meminta model spesifik (misal `gemini-1.5-pro`), tetap disediakan fallback alternatif (misal ke OpenRouter) jika provider utama bermasalah.
-* **Heuristic Resolver**: Menentukan rantai fallback secara dinamis berdasarkan awalan nama model (prefix) jika tidak terdaftar eksplisit.
+* **Virtual Model Presets**:
+  - `combo-anti-limit`: Chain 5 provider untuk ketersediaan tinggi tanpa hambatan rate limit.
+  - `combo-chatbot-cheap` / `combo-chatbot-hemat`: Chain super hemat yang memanfaatkan kuota gratis 1M token Qwen & Gemini.
+  - `combo-coding-antilimit` / `combo-coding`: Chain spesialis coding (Qwen Coder ➔ DeepSeek ➔ Claude 3.5 Sonnet).
+  - `combo-smart` & `combo-fast`: Preset standar untuk reasoning dan latensi rendah.
+* **Semantic Multimodal Routing**: Fungsi `filter_chain_for_multimodal()` secara otomatis mendeteksi elemen `image_url` dan menyaring rantai fallback hanya ke model yang mendukung vision.
 
-### 3. **Account Pool Manager (`src/core/pool_manager.py`)**
-* **Database State**: Menggunakan Supabase sebagai *shared state* (tabel `provider_keys`). Cocok dideploy di Serverless (seperti Vercel) maupun Persistent Service (seperti Render) tanpa khawatir kehilangan status saat *cold start*.
-* **Rotasi Kunci (Key Rotation)**: Mengambil kunci sehat diurutkan berdasarkan `priority` terkecil (prioritas tertinggi) dan `last_used_at` terlama (LRU - Least Recently Used / Round Robin).
-* **Auto-Restoration**: Secara dinamis memulihkan kunci yang sedang dalam masa *cooldown* jika waktu cooldown-nya sudah terlewati (`cooldown_until < NOW()`) sesaat sebelum memilih kunci.
-* **Log Request (`request_logs`)**: Menyimpan riwayat request termasuk token prompt, token completion, latency (ms), status code, dan pesan error jika gagal.
+### 3. **Per-Provider Circuit Breaker (`src/core/circuit_breaker.py`)**
+* **State Machine**: `CLOSED` (normal) → `OPEN` (melewati provider selama 30s) → `HALF-OPEN` (uji coba pemulihan).
+* **Proteksi Cascading Failure**: Mencegah pemanggilan berulang ke provider yang sedang mengalami pemadaman total (*outage*).
 
-### 4. **Provider Client (`src/providers/client.py`)**
-* **Unified API Caller**: Membungkus pemanggilan API untuk Gemini, Groq, dan OpenRouter ke dalam protokol OpenAI-compatible.
-* **Stream & Non-Stream Support**: Menggunakan `httpx.AsyncClient` dengan penanganan stream generator (`aiter_bytes`) untuk respon real-time yang lancar.
-* **Error Normalization**: Menerjemahkan respons non-200 menjadi `ProviderError` yang membedakan tipe error (rate-limit vs invalid auth).
+### 4. **In-Memory Key Pool Cache (`src/core/key_cache.py`)**
+* **Zero DB Write on Read**: Menyimpan kunci aktif per provider di memori lokal selama 30 detik (konfigurabel).
+* **Instant Invalidation**: Cache otomatis dibersihkan secara presisi begitu ada kunci yang berpindah status ke `cooldown` atau `dead`.
+
+### 5. **At-Rest Encryption (`src/core/crypto.py`)**
+* **Fernet AES-128-CBC + HMAC**: Mengenkripsi seluruh API key provider sebelum disimpan ke Supabase jika `ENCRYPTION_KEY` dikonfigurasi.
+* **Backward Compatible**: Menangani kunci plaintext lama secara transparan tanpa perlu migrasi manual.
+
+### 6. **Account & Log Manager (`src/core/pool_manager.py`)**
+* **Rotasi LRU & Prioritas**: Mengambil kunci berdasarkan `priority` terendah dan `last_used_at` terlama.
+* **Multi-Tenant Client Keys**: Mendukung autentikasi berbasis token klien (`ck_...`) dengan verifikasi hash SHA-256 dan batasan model (*allowed_models*).
+
+### 7. **Provider Client (`src/providers/client.py`)**
+* **Connection Pooling**: Memakai `httpx.AsyncClient` dengan HTTP/2 dan batas hingga 200 koneksi simultan.
+* **Transient Retries**: Retry otomatis hingga 2 kali dengan jeda *exponential backoff* (`0.5s * 2^attempt`).
 
 ---
 
 ## 🗄️ Skema Database (Supabase)
 
-Penyimpanan state dan metrik didelegasikan penuh ke Supabase menggunakan dua tabel utama:
-
 ### A. Tabel `provider_keys`
-Menyimpan daftar API key dan status operasionalnya.
-* `id` (UUID, PK)
-* `provider` (TEXT): `gemini`, `groq`, `openrouter`, dll.
-* `key_name` (TEXT): Label pengenal kunci.
-* `key_value` (TEXT): Nilai API key asli (unik).
-* `status` (ENUM): `healthy`, `cooldown`, `dead`.
-* `cooldown_until` (TIMESTAMPTZ): Batas waktu cooldown berakhir.
-* `priority` (INTEGER): Tingkat prioritas (semakin kecil semakin diprioritaskan).
-* `last_used_at` (TIMESTAMPTZ): Waktu terakhir kunci berhasil/mencoba digunakan.
-* `error_count` (INTEGER): Jumlah error beruntun.
+Menyimpan API Key provider (terenkripsi at-rest) dan statusnya (`healthy`, `cooldown`, `dead`).
 
-### B. Tabel `request_logs`
-Menyimpan riwayat transaksi request untuk audit dan statistik.
-* `id` (UUID, PK)
-* `provider` (TEXT)
-* `model` (TEXT)
-* `key_id` (UUID, FK ke `provider_keys`)
-* `prompt_tokens` (INTEGER)
-* `completion_tokens` (INTEGER)
-* `latency_ms` (INTEGER)
-* `status_code` (INTEGER)
-* `error_message` (TEXT)
-* `created_at` (TIMESTAMPTZ)
+### B. Tabel `client_keys` (Multi-Tenancy)
+Menyimpan hash SHA-256 dari kunci klien, batasan model, dan limit token harian.
 
----
+### C. Tabel `request_logs`
+Menyimpan riwayat transaksi request lengkap dengan `request_id`, `client_key_id`, token prompt/completion, latency, dan JSON `metadata`.
 
-## 🔄 Alur Penanganan Error & Pemulihan (Resiliency)
-
-Sistem dirancang *resilient* terhadap kegagalan kunci API dengan aturan penanganan sebagai berikut:
-
-| Jenis Error | HTTP Status | Tindakan pada Kunci | Durasi Cooldown | Alur Selanjutnya |
-| :--- | :--- | :--- | :--- | :--- |
-| **Rate Limit** | `429` | Pindah ke `cooldown` | 60 detik | Coba kunci berikutnya di provider yang sama. |
-| **Auth/Invalid Key**| `401` / `403` | Pindah ke `dead` (blacklist) | Selamanya | Coba kunci berikutnya di provider yang sama. |
-| **Network / Server Error** | `5xx` / Exception | Pindah ke `cooldown` | 15 detik | Coba kunci berikutnya di provider yang sama. |
-
-*Catatan: Jika seluruh kunci dalam suatu provider habis/cooldown/dead, router otomatis berpindah ke provider berikutnya di dalam fallback chain.*
+### D. Tabel `model_routes`
+Tabel pemetaan rute dinamis yang dapat diubah langsung dari Supabase tanpa perlu *re-deploy*.
 
 ---
 
 ## 📁 Struktur Direktori Proyek
 
 ```
-9router/
+llm-router/
 ├── docs/
-│   └── architectur.md          # Dokumentasi arsitektur ini
+│   ├── architectur.md          # Dokumentasi arsitektur ini
+│   ├── api_reference.md        # API reference
+│   └── deployment.md           # Panduan deployment
 ├── src/
-│   ├── main.py                 # Entrypoint FastAPI & routing endpoint
-│   ├── config.py               # Pemuat konfigurasi environment (.env)
+│   ├── main.py                 # Entrypoint FastAPI & routing pipeline
+│   ├── config.py               # Konfigurasi environment & settings
+│   ├── schemas.py              # Pydantic schemas (OpenAI-compatible + extensions)
 │   ├── core/
-│   │   ├── pool_manager.py     # Manajemen pool kunci Supabase & log request
-│   │   └── router.py           # Konfigurasi model virtual & rantai fallback
-│   └── providers/
-│       └── client.py           # Client HTTPX untuk pemanggilan provider LLM
-├── .env.example                # Template konfigurasi environment
-├── render.yaml                 # Blueprint deployment ke Render
+│   │   ├── circuit_breaker.py  # Per-provider circuit breaker
+│   │   ├── crypto.py           # At-rest Fernet encryption
+│   │   ├── key_cache.py        # In-memory key pool cache
+│   │   ├── logging_config.py   # Structured JSON logging
+│   │   ├── pool_manager.py     # Manajemen pool Supabase & client keys
+│   │   └── router.py           # Virtual models & semantic fallback chain
+│   ├── providers/
+│   │   └── client.py           # HTTPX async client + retry backoff
+│   └── routers/
+│       └── admin.py            # REST API admin management
+├── tests/                      # 51 Unit & Integration tests
+├── completion.md               # Summary rincian upgrade v2.0
 ├── requirements.txt            # Dependensi Python
 └── supabase_schema.sql         # Skema database Supabase
 ```
-
----
-
-## 🚀 Perbandingan Infrastruktur Deployment
-
-Karena kita menggunakan **Supabase** sebagai pusat manajemen state kunci API, kita terhindar dari keterbatasan serverless:
-
-* **Vercel (Serverless)**: Sangat cocok jika ingin diekspos sebagai API tanpa beban server menyala terus-menerus. Karena status key disimpan di Supabase, masalah *cold start* tidak akan menghilangkan status rate-limit/cooldown/dead dari kunci API.
-* **Render (Persistent Service)**: Bagus untuk meminimalisir waktu koneksi/cold start FastAPI itu sendiri. Render akan menjalankan server web FastAPI secara konstan.

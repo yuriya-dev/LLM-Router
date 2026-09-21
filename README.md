@@ -1,24 +1,44 @@
 # Custom LLM Router (FastAPI + Supabase)
 
-Custom LLM Router adalah gateway API lokal/cloud berbasis FastAPI (Python) yang terintegrasi dengan Supabase untuk mengelola banyak API key (multi-account) dan platform LLM secara dinamis. Router ini mendukung rotasi kunci otomatis (*key rotation*), pemulihan rate limit (*cooldown mechanism*), penonaktifan kunci mati (*blacklist*), dan fallback antarlayanan (Gemini, Groq, OpenRouter).
+Custom LLM Router v2.0 adalah **Production-Grade LLM Gateway API** berbasis FastAPI (Python) yang terintegrasi dengan Supabase untuk mengelola multi-account API keys, rotasi kunci otomatis (*key rotation*), pemulihan rate limit (*auto-cooldown*), penanganan kunci mati (*auto-blacklist*), *circuit breaker*, enkripsi kunci *at-rest*, multi-tenancy, dan *fallback chain* antarlayanan (Gemini, Groq, OpenRouter, DashScope/Qwen, Mistral, OpenAI, Moonshot).
+
+---
 
 ## 🚀 Fitur Utama
 
-- **Unified Endpoint**: Menyediakan endpoint tunggal standar OpenAI-compatible (`POST /v1/chat/completions`).
-- **Multi-Account & Multi-Platform**: Mengelola banyak API key untuk Gemini, Groq, dan OpenRouter dalam satu database.
-- **Smart Rotation & Priority**: Rotasi kunci otomatis berbasis LRU (Least-Recently-Used) dengan penentuan prioritas (*priority tiers*).
-- **Auto Cooldown & Self-Healing**: Secara otomatis mendeteksi error rate-limit (HTTP 429) dan meng-cooldown kunci tersebut selama 60 detik sebelum dicoba kembali.
-- **Auto Blacklist**: Mendeteksi kunci yang mati (HTTP 401/403) dan menandai statusnya sebagai `dead`.
-- **Flexible Fallback Chain**: Rantai fallback otomatis antarlayanan (misal: jika semua kunci Gemini limit/mati, otomatis beralih ke OpenRouter).
-- **Streaming Support**: Mendukung respon streaming penuh (`stream: true`).
-- **Supabase Connected**: Semua status kunci, penambahan akun, dan statistik panggilan (*request logs*) disimpan terpusat di cloud Supabase.
+- **Unified OpenAI-Compatible Endpoint**: Endpoint tunggal standar OpenAI (`POST /v1/chat/completions` & `GET /v1/models`).
+- **Multi-Account & Multi-Platform**: Mengelola API key untuk Gemini, Groq, OpenRouter, DashScope/Qwen, OpenAI, Moonshot, Cerebras, dan Mistral.
+- **In-Memory Key Pool Cache**: Caching lokal tanpa DB round-trip pada setiap request, meningkatkan performa hingga 10x.
+- **Per-Provider Circuit Breaker**: State machine (`CLOSED` → `OPEN` → `HALF-OPEN`) untuk mencegah panggilan berulang ke provider yang sedang *outage*.
+- **Automatic Retry + Exponential Backoff**: Retry otomatis untuk error jaringan sementara (*transient error*) dengan delay bertahap (`0.5s`, `1s`, `2s`).
+- **At-Rest Fernet Encryption**: Enkripsi simetris (AES-128-CBC + HMAC) untuk mengamankan API key di database Supabase.
+- **Multi-Tenant Authentication**: Setiap klien dapat memiliki API Key sendiri (`ck_...`) dengan batasan model (*model whitelist*) dan kuota token harian.
+- **Semantic Multimodal Routing**: Otomatis mendeteksi request dengan gambar (`image_url`) dan mengarahkannya ke model yang mendukung vision.
+- **End-to-End Tracing (`X-Request-ID`)**: Setiap request dilengkapi ID unik untuk tracking dan audit log.
+- **Per-Request Timeout Override**: Klien dapat menentukan timeout khusus via header `X-Request-Timeout` atau body request.
+- **Structured JSON Logging**: Log berformat JSON standar produksi untuk memudahkan agregasi (Datadog, Loki, CloudWatch).
+- **Virtual Model Combos**: Menyediakan preset rantai fallback cerdas untuk use case spesifik (*anti-limit*, *chatbot hemat*, *coding*).
 
-## 📚 Dokumentasi
+---
 
-Untuk rincian teknis lengkap mengenai arsitektur, endpoint API, dan cara deployment:
-- [Arsitektur & Alur Kerja](file:///Users/wahyutricahya/Work/llm-router/docs/architectur.md)
+## 📚 Dokumentasi Lengkap
+
+- [Arsitektur & Alur Kerja v2.0](file:///Users/wahyutricahya/Work/llm-router/docs/architectur.md)
+- [Dokumen Rincian Fitur v2.0](file:///Users/wahyutricahya/Work/llm-router/completion.md)
 - [API Reference](file:///Users/wahyutricahya/Work/llm-router/docs/api_reference.md)
 - [Panduan Deployment](file:///Users/wahyutricahya/Work/llm-router/docs/deployment.md)
+
+---
+
+## 🎯 Model Virtual & Combo Preset
+
+| Model Virtual | Deskripsi & Fallback Chain | Use Case |
+| :--- | :--- | :--- |
+| **`combo-anti-limit`** | **Chain 5 Provider**: `dashscope` (DeepSeek v4.1) ➔ `gemini` (Gemini 2.0 Flash) ➔ `groq` (Llama 3.3 70B) ➔ `dashscope` (Qwen 3.7 Flash) ➔ `openrouter` | General High Availability |
+| **`combo-chatbot-cheap`**<br>`combo-chatbot-hemat` | **Chain Super Hemat**: `dashscope` (Qwen 3.5 Flash) ➔ `gemini` (Gemini 2.0 Flash) ➔ `groq` (Llama 3.1 8B) ➔ `dashscope` (Qwen 3.6 Flash) ➔ `openrouter` | Chatbot Volume Tinggi |
+| **`combo-coding-antilimit`**<br>`combo-coding` | **Chain Khusus Coding**: `dashscope` (Qwen 3 Coder Plus) ➔ `dashscope` (Qwen 3 Coder Flash) ➔ `dashscope` (DeepSeek v4.1) ➔ `openrouter` (Claude 3.5 Sonnet) ➔ `groq` (Llama 3.3 70B) | Coding Assistant & IDE |
+| **`combo-smart`** | **Smart Quality Chain**: `openrouter` (Claude 3.5 Sonnet) ➔ `gemini` (Gemini 2.5 Pro) | Complex Reasoning |
+| **`combo-fast`** | **Fast Response Chain**: `groq` (Llama 3.3 70B) ➔ `gemini` (Gemini 2.0 Flash) | Ultra Low Latency |
 
 ---
 
@@ -27,116 +47,75 @@ Untuk rincian teknis lengkap mengenai arsitektur, endpoint API, dan cara deploym
 1. Buka dashboard proyek **Supabase** Anda.
 2. Navigasi ke menu **SQL Editor** lalu buat query baru.
 3. Salin dan jalankan seluruh isi skema dari berkas [supabase_schema.sql](supabase_schema.sql).
-4. Masukkan API Key Anda ke tabel `provider_keys` melalui **Table Editor** Supabase atau jalankan perintah SQL berikut di SQL Editor:
+4. Masukkan API Key provider Anda ke tabel `provider_keys`:
 
 ```sql
 INSERT INTO provider_keys (provider, key_name, key_value, priority)
 VALUES
-    -- Contoh API Key Gemini
+    ('dashscope', 'DashScope Utama', 'sk-dashscope-key...', 1),
     ('gemini', 'Gemini Utama', 'AIzaSy_Gemini_Key_1...', 1),
-    ('gemini', 'Gemini Cadangan', 'AIzaSy_Gemini_Key_2...', 2),
-
-    -- Contoh API Key Groq
     ('groq', 'Groq Utama', 'gsk_Groq_Key_1...', 1),
-
-    -- Contoh API Key OpenRouter
     ('openrouter', 'OpenRouter Utama', 'sk-or-v1-Key_1...', 1);
 ```
 
 ---
 
-## 💻 Cara Menjalankan Secara Lokal
+## 💻 Cara Menjalankan secara Lokal
 
-### 1. Kloning / Buka Workspace
-Pastikan Anda berada di direktori proyek:
-```bash
-cd /Users/wahyutricahya/Work/9router
-```
-
-### 2. Buat Virtual Environment & Instal Dependensi
+### 1. Buat Virtual Environment & Instal Dependensi
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3. Konfigurasikan File `.env`
-Salin file `.env.example` menjadi `.env` lalu lengkapi nilai konfigurasi Supabase Anda:
-```bash
-cp .env.example .env
-```
-Isi dari `.env`:
+### 2. Konfigurasikan File `.env`
+Salin `.env.example` menjadi `.env`:
 ```env
 SUPABASE_URL=https://your-project-id.supabase.co
-SUPABASE_KEY=your-supabase-anon-key-or-service-role-key
+SUPABASE_KEY=your-supabase-key
 PORT=8000
-ROUTER_API_KEY=your-custom-router-api-key # Isi jika ingin mengamankan endpoint router Anda
+ROUTER_API_KEY=your-admin-secret-key
+
+# Optional Multi-Tenancy & Encryption
+MULTI_TENANT=false
+ENCRYPTION_KEY=
 ```
 
-### 4. Jalankan Server
+### 3. Jalankan Server
 ```bash
 python -m src.main
 ```
-Server Anda akan berjalan secara lokal di: `http://localhost:8000`
+Server akan berjalan secara lokal di: `http://localhost:8000`
 
 ---
 
-## 🔌 Cara Integrasi dengan Aplikasi/Klien Anda
+## 🔌 Integration Guide (VS Code, Continue, Chatbot)
 
-Arahkan aplikasi coding, ekstensi editor, atau klien AI Anda ke endpoint router ini dengan detail berikut:
+### 1. Chatbot & Aplikasi Custom (Python)
+```python
+from openai import OpenAI
 
-- **Base URL / Endpoint**: `http://localhost:8000/v1`
-- **API Key**: Gunakan token yang Anda isi pada `ROUTER_API_KEY` di file `.env` (isi dengan teks sembarang jika `ROUTER_API_KEY` dikosongkan).
-- **Model Pilihan**:
-  - `combo-anti-limit` (Chain 5 Provider: DashScope DeepSeek v4.1 ➔ Gemini 2.0 Flash ➔ Groq Llama 3.3 70B ➔ DashScope Qwen 3.7 ➔ OpenRouter)
-  - `combo-chatbot-cheap` / `combo-chatbot-hemat` (Chain Super Hemat / Gratis 1M Kuota: Qwen 3.5 Flash ➔ Gemini 2.0 Flash ➔ Groq Llama 3.1 8B ➔ Qwen 3.6 Flash)
-  - `combo-coding-antilimit` / `combo-coding` (Chain Khusus Coding: Qwen 3 Coder Plus ➔ Qwen 3 Coder Flash ➔ DeepSeek v4.1 ➔ Claude 3.5 Sonnet ➔ Groq 70B)
-  - `combo-smart` (Fallback: OpenRouter Claude 3.5 Sonnet ➔ Gemini 1.5 Pro)
-  - `combo-fast` (Fallback: Groq Llama 3 8B ➔ Gemini 1.5 Flash)
+client = OpenAI(
+    base_url="http://localhost:8000/v1",
+    api_key="<ROUTER_API_KEY Anda>",
+)
 
-### 1. VS Code (Cline / Roo Code / Roo Cline)
-1. Buka ekstensi **Cline / Roo Code** di VS Code.
-2. Klik ikon **Settings** (ikon roda gigi).
-3. Pada dropdown **API Provider**, pilih **OpenAI Compatible**.
-4. Masukkan konfigurasi berikut:
-   * **Base URL**: `http://localhost:8000/v1`
-   * **API Key**: `<ROUTER_API_KEY Anda>` (dari file `.env`)
-   * **Model ID**: `combo-smart` atau `combo-fast`
+completion = client.chat.completions.create(
+    model="combo-chatbot-cheap",
+    messages=[{"role": "user", "content": "Halo! Ada yang bisa dibantu?"}],
+)
+print(completion.choices[0].message.content)
+```
 
-### 2. VS Code (Continue)
-1. Buka berkas konfigurasi Continue di folder home Anda (biasanya di `~/.continue/config.json`).
-2. Tambahkan entri model baru di dalam array `"models"`:
-   ```json
-   {
-     "models": [
-       {
-         "title": "Custom Router Smart",
-         "provider": "openai",
-         "model": "combo-smart",
-         "apiBase": "http://localhost:8000/v1",
-         "apiKey": "your-router-api-key"
-       }
-     ]
-   }
-   ```
-3. Simpan berkas tersebut, lalu pilih model **Custom Router Smart** di antarmuka Continue.
-
-### 3. Google Antigravity (AGY CLI / IDE)
-Antigravity dirancang untuk terintegrasi secara mendalam dengan model Google Gemini secara langsung. 
-- **Model Utama**: Tidak ada setelan bawaan untuk mengalihkan chat asisten utama ke router OpenAI pihak ketiga.
-- **Penggunaan dalam Script**: Jika Anda menulis script atau program Python di dalam Antigravity, Anda dapat memanggil router ini dengan library standard `openai` atau `httpx` dengan mengarahkan target API ke `http://localhost:8000/v1`.
-
+### 2. VS Code (Cline / Roo Code)
+- **API Provider**: `OpenAI Compatible`
+- **Base URL**: `http://localhost:8000/v1`
+- **API Key**: `<ROUTER_API_KEY Anda>`
+- **Model ID**: `combo-coding-antilimit` atau `combo-anti-limit`
 
 ---
 
-## ☁️ Cara Deploy ke Render (Production)
+## ☁️ Deployment
 
-Proyek ini telah dilengkapi dengan berkas konfigurasi blueprint Render yaitu [render.yaml](render.yaml).
-
-1. Hubungkan repository GitHub Anda ke **Render**.
-2. Buat layanan baru di Render menggunakan pilihan **Blueprints**.
-3. Render akan membaca [render.yaml](render.yaml) secara otomatis dan memproses pembuatan Web Service.
-4. Jangan lupa untuk mengisi Variabel Lingkungan (*Environment Variables*) di dashboard Render:
-   - `SUPABASE_URL`
-   - `SUPABASE_KEY`
-   - `ROUTER_API_KEY`
+Proyek ini dilengkapi dengan berkas blueprint Render [render.yaml](render.yaml) dan mendukung deployment ke Vercel atau persistent container.
