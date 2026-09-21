@@ -177,6 +177,16 @@ async def root():
 @app.api_route("/healthz", methods=["GET", "HEAD"])
 async def health_check():
     """Returns router status, database status, and real-time key pool snapshot."""
+    if not supabase:
+        return {
+            "status": "unhealthy",
+            "timestamp": time.time(),
+            "db_connected": False,
+            "error": "SUPABASE_URL and SUPABASE_KEY environment variables are missing. Please set them in Railway Variables tab.",
+            "key_pool": {},
+            "circuit_breakers": circuit_breaker.get_status(),
+        }
+
     def _query():
         return supabase.table("provider_keys").select("provider, status").execute()
 
@@ -209,30 +219,31 @@ async def prometheus_metrics():
     """Prometheus-compatible plain text metrics endpoint for monitoring."""
     from fastapi.responses import PlainTextResponse
 
-    def _query():
-        return supabase.table("provider_keys").select("provider, status").execute()
-
     lines = [
         "# HELP llm_router_up Gateway status (1 = healthy)",
         "# TYPE llm_router_up gauge",
         "llm_router_up 1",
     ]
 
-    try:
-        response = await asyncio.to_thread(_query)
-        summary: dict = {}
-        for row in (response.data or []):
-            p, s = row["provider"], row["status"]
-            summary.setdefault(p, {"healthy": 0, "cooldown": 0, "dead": 0})
-            summary[p][s] = summary[p].get(s, 0) + 1
+    if supabase:
+        def _query():
+            return supabase.table("provider_keys").select("provider, status").execute()
 
-        lines.append("# HELP llm_router_provider_keys Count of provider keys by provider and status")
-        lines.append("# TYPE llm_router_provider_keys gauge")
-        for p, states in summary.items():
-            for s, count in states.items():
-                lines.append(f'llm_router_provider_keys{{provider="{p}",status="{s}"}} {count}')
-    except Exception:
-        pass
+        try:
+            response = await asyncio.to_thread(_query)
+            summary: dict = {}
+            for row in (response.data or []):
+                p, s = row["provider"], row["status"]
+                summary.setdefault(p, {"healthy": 0, "cooldown": 0, "dead": 0})
+                summary[p][s] = summary[p].get(s, 0) + 1
+
+            lines.append("# HELP llm_router_provider_keys Count of provider keys by provider and status")
+            lines.append("# TYPE llm_router_provider_keys gauge")
+            for p, states in summary.items():
+                for s, count in states.items():
+                    lines.append(f'llm_router_provider_keys{{provider="{p}",status="{s}"}} {count}')
+        except Exception:
+            pass
 
     cb_status = circuit_breaker.get_status()
     lines.append("# HELP llm_router_circuit_breaker_open Circuit breaker state (1 = OPEN, 0 = CLOSED)")
