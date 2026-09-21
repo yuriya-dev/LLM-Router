@@ -115,6 +115,12 @@ class TestStaticRouting:
     def test_combo_fast_exists(self):
         assert "combo-fast" in _STATIC_ROUTING
 
+    def test_new_combo_models_exist(self):
+        new_combos = ["combo-anti-limit", "combo-chatbot-cheap", "combo-chatbot-hemat", "combo-coding-antilimit", "combo-coding"]
+        for combo in new_combos:
+            assert combo in _STATIC_ROUTING
+            assert len(_STATIC_ROUTING[combo]) >= 4
+
     def test_combo_smart_has_multiple_fallbacks(self):
         chain = _STATIC_ROUTING["combo-smart"]
         assert len(chain) >= 2

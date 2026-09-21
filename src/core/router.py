@@ -64,6 +64,43 @@ _STATIC_ROUTING: Dict[str, List[Tuple[str, str]]] = {
         ("groq", "llama-3.3-70b-versatile"),
         ("gemini", "gemini-2.0-flash"),
     ],
+    "combo-anti-limit": [
+        ("dashscope", "deepseek-v4.1-flash"),
+        ("gemini", "gemini-2.0-flash"),
+        ("groq", "llama-3.3-70b-versatile"),
+        ("dashscope", "qwen3.7-flash"),
+        ("openrouter", "google/gemini-2.0-flash-001"),
+    ],
+    "combo-chatbot-cheap": [
+        ("dashscope", "qwen3.5-flash"),
+        ("gemini", "gemini-2.0-flash"),
+        ("groq", "llama-3.1-8b-instant"),
+        ("dashscope", "qwen3.6-flash"),
+        ("openrouter", "meta-llama/llama-3.1-8b-instruct"),
+    ],
+    "combo-chatbot-hemat": [
+        ("dashscope", "qwen3.5-flash"),
+        ("gemini", "gemini-2.0-flash"),
+        ("groq", "llama-3.1-8b-instant"),
+        ("dashscope", "qwen3.6-flash"),
+        ("openrouter", "meta-llama/llama-3.1-8b-instruct"),
+    ],
+    "combo-coding-antilimit": [
+        ("dashscope", "qwen3-coder-plus"),
+        ("dashscope", "qwen3-coder-flash"),
+        ("dashscope", "deepseek-v4.1-flash"),
+        ("openrouter", "anthropic/claude-3.5-sonnet"),
+        ("groq", "llama-3.3-70b-versatile"),
+        ("openrouter", "qwen/qwen3-coder-plus"),
+    ],
+    "combo-coding": [
+        ("dashscope", "qwen3-coder-plus"),
+        ("dashscope", "qwen3-coder-flash"),
+        ("dashscope", "deepseek-v4.1-flash"),
+        ("openrouter", "anthropic/claude-3.5-sonnet"),
+        ("groq", "llama-3.3-70b-versatile"),
+        ("openrouter", "qwen/qwen3-coder-plus"),
+    ],
     # Direct mappings with fallback alternatives
     "gemini-1.5-pro": [
         ("gemini", "gemini-2.5-pro"),

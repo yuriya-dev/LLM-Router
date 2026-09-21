@@ -88,12 +88,11 @@ Arahkan aplikasi coding, ekstensi editor, atau klien AI Anda ke endpoint router 
 - **Base URL / Endpoint**: `http://localhost:8000/v1`
 - **API Key**: Gunakan token yang Anda isi pada `ROUTER_API_KEY` di file `.env` (isi dengan teks sembarang jika `ROUTER_API_KEY` dikosongkan).
 - **Model Pilihan**:
+  - `combo-anti-limit` (Chain 5 Provider: DashScope DeepSeek v4.1 ➔ Gemini 2.0 Flash ➔ Groq Llama 3.3 70B ➔ DashScope Qwen 3.7 ➔ OpenRouter)
+  - `combo-chatbot-cheap` / `combo-chatbot-hemat` (Chain Super Hemat / Gratis 1M Kuota: Qwen 3.5 Flash ➔ Gemini 2.0 Flash ➔ Groq Llama 3.1 8B ➔ Qwen 3.6 Flash)
+  - `combo-coding-antilimit` / `combo-coding` (Chain Khusus Coding: Qwen 3 Coder Plus ➔ Qwen 3 Coder Flash ➔ DeepSeek v4.1 ➔ Claude 3.5 Sonnet ➔ Groq 70B)
   - `combo-smart` (Fallback: OpenRouter Claude 3.5 Sonnet ➔ Gemini 1.5 Pro)
   - `combo-fast` (Fallback: Groq Llama 3 8B ➔ Gemini 1.5 Flash)
-  - `gemini-1.5-pro` (Fallback: Gemini Lokal ➔ OpenRouter Gemini Pro)
-  - `gemini-1.5-flash`
-  - `claude-3-5-sonnet`
-  - `llama3-8b`
 
 ### 1. VS Code (Cline / Roo Code / Roo Cline)
 1. Buka ekstensi **Cline / Roo Code** di VS Code.
